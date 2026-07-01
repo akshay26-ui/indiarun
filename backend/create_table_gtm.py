@@ -3,6 +3,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.models.base import Base
 from app.models.unit_economics import UnitEconomics
+from app.models.gtm_plan import GtmPlan
 from dotenv import load_dotenv
 
 load_dotenv()

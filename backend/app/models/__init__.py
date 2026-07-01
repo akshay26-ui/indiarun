@@ -12,3 +12,4 @@ from app.models.prototype import Prototype
 
 __all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD", "FailureRisk", "SourceCitation", "Prototype"]
 from .unit_economics import UnitEconomics
+from .gtm_plan import GtmPlan

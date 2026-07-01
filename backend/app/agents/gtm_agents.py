@@ -31,3 +31,35 @@ async def generate_unit_economics_verdict(metrics: dict) -> str:
     model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(prompt)
     return response.text.strip()
+
+async def generate_gtm_plan_data(brand_brief_dict: dict, prd_content: str) -> dict:
+    """
+    Generates a 7-field GTM Plan based on the Brand Brief and PRD.
+    """
+    prompt = f"""
+    You are an expert Go-To-Market (GTM) strategist.
+    Based on the following Brand Brief and PRD, generate a structured GTM plan.
+    
+    Brand Brief:
+    {brand_brief_dict}
+    
+    PRD:
+    {prd_content}
+    
+    Output exactly in this JSON structure (no markdown backticks, just raw JSON):
+    {{
+        "objective": "A clear, measurable goal for the launch",
+        "target_market": "A concise definition of the primary audience",
+        "positioning": "How the product is positioned vs competitors",
+        "gtm_motion": "e.g., Product-led, Sales-led, Community-led",
+        "packaging_strategy": "How the product is priced and packaged",
+        "key_differentiators": ["Diff 1", "Diff 2"],
+        "success_metrics": ["Metric 1", "Metric 2"]
+    }}
+    """
+    
+    model = genai.GenerativeModel("gemini-2.5-flash", generation_config={"response_mime_type": "application/json"})
+    response = model.generate_content(prompt)
+    import json
+    return json.loads(response.text)
+
