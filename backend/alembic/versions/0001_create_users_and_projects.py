@@ -42,9 +42,9 @@ def upgrade() -> None:
     )
 
     # -- enums (created explicitly so downgrade can drop them) ---------------
-    product_type_enum.create(op.get_bind(), checkfirst=True)
-    project_stage_enum.create(op.get_bind(), checkfirst=True)
-    project_status_enum.create(op.get_bind(), checkfirst=True)
+    # product_type_enum.create(op.get_bind(), checkfirst=True)
+    # project_stage_enum.create(op.get_bind(), checkfirst=True)
+    # project_status_enum.create(op.get_bind(), checkfirst=True)
 
     # -- projects ------------------------------------------------------------
     op.create_table(
