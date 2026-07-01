@@ -3,10 +3,16 @@ from typing import List, Optional
 from app.services.llm import client
 from google.genai import types
 
+class DemographicsSchema(BaseModel):
+    age: str
+    occupation: str
+    location: str
+    income: str
+
 class PersonaSchema(BaseModel):
     name: str
     quote: str
-    demographics: dict
+    demographics: DemographicsSchema
     goals: List[str]
     pain_points: List[str]
     scenario: str

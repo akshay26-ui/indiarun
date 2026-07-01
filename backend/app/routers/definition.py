@@ -39,22 +39,79 @@ async def create_brand_brief(project_id: uuid.UUID, data: dict, db: AsyncSession
         
     result = await db.execute(select(BrandBrief).filter(BrandBrief.project_id == project_id))
     brief = result.scalars().first()
+    
     if brief:
-        await db.delete(brief)
-        
-    brief = BrandBrief(
-        project_id=project_id,
-        whitespace_summary=data.get("whitespace_summary", "Manual testing summary"),
-        psychographic_target=data.get("psychographic_target", {}),
-        approved=True
-    )
-    db.add(brief)
+        brief.whitespace_summary = data.get("whitespace_summary", "Manual testing summary")
+        brief.psychographic_target = data.get("psychographic_target", {})
+        brief.approved = True
+    else:
+        brief = BrandBrief(
+            project_id=project_id,
+            whitespace_summary=data.get("whitespace_summary", "Manual testing summary"),
+            psychographic_target=data.get("psychographic_target", {}),
+            approved=True
+        )
+        db.add(brief)
     
     project.current_stage = "definition"
     await db.commit()
     await db.refresh(brief)
     
     return {"status": "ok", "id": brief.id}
+
+@router.post("/whitespace/generate")
+async def generate_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    from app.agents.whitespace_agents import discover_competitors, analyze_price_tiers, analyze_psychographics
+    
+    result = await db.execute(select(Project).filter(Project.id == project_id))
+    project = result.scalars().first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    result = await db.execute(select(IntakeBrief).filter(IntakeBrief.project_id == project_id))
+    intake = result.scalars().first()
+    if not intake:
+        raise HTTPException(status_code=400, detail="Missing intake brief")
+        
+    category = intake.category or project.idea_name
+    known_competitors = intake.known_competitors or []
+    
+    # 1. Discover
+    competitors = discover_competitors(category, known_competitors)
+    
+    # 2. Price Tiers
+    price_tiers = analyze_price_tiers(competitors)
+    
+    # 3. Psychographics
+    snippets = [c.get("review_snippet", "") for c in competitors]
+    psychographics = analyze_psychographics(category, snippets)
+    
+    # Update or Create BrandBrief
+    result = await db.execute(select(BrandBrief).filter(BrandBrief.project_id == project_id))
+    brief = result.scalars().first()
+    
+    summary = f"Found {len(competitors)} competitors in category {category}. Price analysis identified opportunities in {price_tiers.get('tiers', [])}. Primary psychographic driver: {psychographics.get('driver')}."
+    
+    if brief:
+        brief.whitespace_summary = summary
+        brief.psychographic_target = psychographics
+        brief.price_tier_map = price_tiers
+        brief.approved = True
+    else:
+        brief = BrandBrief(
+            project_id=project_id,
+            whitespace_summary=summary,
+            psychographic_target=psychographics,
+            price_tier_map=price_tiers,
+            approved=True
+        )
+        db.add(brief)
+        
+    project.current_stage = "definition"
+    await db.commit()
+    
+    return {"status": "ok"}
+
 
 @router.post("/definition/generate")
 async def generate_definition(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
@@ -64,11 +121,22 @@ async def generate_definition(project_id: uuid.UUID, db: AsyncSession = Depends(
     result = await db.execute(select(IntakeBrief).filter(IntakeBrief.project_id == project_id))
     intake = result.scalars().first()
     
+    if not intake:
+        intake = IntakeBrief(
+            project_id=project_id,
+            problem_statement="Manual fallback problem statement",
+            target_user="Manual fallback target user",
+            known_competitors=[]
+        )
+        db.add(intake)
+        await db.commit()
+        await db.refresh(intake)
+    
     result = await db.execute(select(BrandBrief).filter(BrandBrief.project_id == project_id))
     brand = result.scalars().first()
     
-    if not intake or not brand:
-        raise HTTPException(status_code=400, detail="Missing intake or brand brief")
+    if not brand:
+        raise HTTPException(status_code=400, detail="Missing brand brief")
         
     intake_dict = {
         "problem_statement": intake.problem_statement,

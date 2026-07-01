@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { fetchWithAuth } from "@/lib/api";
 
 export default function WhitespacePage() {
@@ -15,30 +12,26 @@ export default function WhitespacePage() {
   const router = useRouter();
   const projectId = params.id as string;
   
-  const [summary, setSummary] = useState("The market lacks an affordable, user-friendly solution for this segment.");
-  const [driver, setDriver] = useState("Desire for convenience");
-  const [evidence, setEvidence] = useState("Users frequently mention saving time in surveys.");
-  
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerate = async () => {
     setLoading(true);
     try {
-      await fetchWithAuth(`/project/${projectId}/brand_brief`, {
-        method: "POST",
-        body: JSON.stringify({
-          whitespace_summary: summary,
-          psychographic_target: {
-            driver: driver,
-            evidence_summary: evidence
-          }
-        })
+      // Run the whitespace engine
+      await fetchWithAuth(`/project/${projectId}/whitespace/generate`, {
+        method: "POST"
       });
+      
+      // Then generate the definition artifacts
+      await fetchWithAuth(`/project/${projectId}/definition/generate`, {
+        method: "POST"
+      });
+      
       router.push(`/project/${projectId}/definition`);
     } catch (err) {
       console.error(err);
       setLoading(false);
+      alert("Error generating whitespace. Check backend logs.");
     }
   };
 
@@ -50,45 +43,28 @@ export default function WhitespacePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Temporary Brand Brief Form</CardTitle>
+          <CardTitle>Whitespace Engine</CardTitle>
           <CardDescription>
-            (Dev-only) Manually input the Brand Brief to bypass the Whitespace Engine and proceed to the Definition Engine.
+            Our AI agents will search the web, analyze competitors, cluster prices into tiers, and extract psychographic drivers using sentiment analysis and Google Trends.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label>Whitespace Summary</Label>
-              <Textarea 
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Psychographic Driver</Label>
-              <Input 
-                value={driver}
-                onChange={(e) => setDriver(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Driver Evidence Summary</Label>
-              <Input 
-                value={evidence}
-                onChange={(e) => setEvidence(e.target.value)}
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Definition (Personas, Features, PRD)
+          <div className="flex flex-col items-center justify-center py-8 space-y-6">
+            <Sparkles className="w-16 h-16 text-primary animate-pulse" />
+            <p className="text-center text-muted-foreground">
+              Ready to find the perfect market gap for your product?
+            </p>
+            <Button onClick={handleGenerate} size="lg" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Agents are analyzing the market (this takes ~30 seconds)...
+                </>
+              ) : (
+                "Run Whitespace Analysis & Generate PRD"
+              )}
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>
