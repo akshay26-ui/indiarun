@@ -59,6 +59,48 @@ async def create_brand_brief(project_id: uuid.UUID, data: dict, db: AsyncSession
     
     return {"status": "ok", "id": brief.id}
 
+@router.get("/whitespace")
+async def get_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    from app.models.source_citation import SourceCitation
+    from app.models.failure_risk import FailureRisk
+    
+    result = await db.execute(select(BrandBrief).filter(BrandBrief.project_id == project_id))
+    brief = result.scalars().first()
+    if not brief:
+        return {"brief": None}
+        
+    cits_result = await db.execute(select(SourceCitation).filter(SourceCitation.project_id == project_id))
+    citations = cits_result.scalars().all()
+    
+    risks_result = await db.execute(select(FailureRisk).filter(FailureRisk.brand_brief_id == brief.id))
+    risks = risks_result.scalars().all()
+    
+    return {
+        "brief": {
+            "id": brief.id,
+            "whitespace_summary": brief.whitespace_summary,
+            "price_tier_map": brief.price_tier_map,
+            "psychographic_target": brief.psychographic_target,
+            "brand_credibility_score": brief.brand_credibility_score,
+            "recommended_attributes": brief.recommended_attributes,
+            "approved": brief.approved
+        },
+        "citations": [
+            {
+                "field_referenced": c.field_referenced,
+                "source_url": c.source_url,
+                "source_type": c.source_type
+            } for c in citations
+        ],
+        "failure_risks": [
+            {
+                "precedent_name": r.precedent_name,
+                "similarity_reason": r.similarity_reason,
+                "mitigation_suggestion": r.mitigation_suggestion
+            } for r in risks
+        ]
+    }
+
 @router.post("/whitespace/generate")
 async def generate_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     from fastapi.responses import StreamingResponse
