@@ -27,9 +27,10 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
-from app.routers import auth
+from app.routers import auth, intake
 app.include_router(auth.router)
 app.include_router(projects.router)
+app.include_router(intake.router)
 app.include_router(whitespace.router)
 
 
