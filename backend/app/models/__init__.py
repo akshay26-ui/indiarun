@@ -6,5 +6,7 @@ from app.models.brand_brief import BrandBrief
 from app.models.persona import Persona
 from app.models.feature import Feature
 from app.models.prd import PRD
+from app.models.failure_risk import FailureRisk
+from app.models.source_citation import SourceCitation
 
-__all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD"]
+__all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD", "FailureRisk", "SourceCitation"]

@@ -36,3 +36,4 @@ class BrandBrief(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
     project = relationship("Project", backref="brand_brief")
+    failure_risks = relationship("FailureRisk", back_populates="brand_brief", cascade="all, delete-orphan")

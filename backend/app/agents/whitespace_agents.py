@@ -26,6 +26,7 @@ def discover_competitors(category: str, known_competitors: List[str]) -> List[di
     # 1. Search DuckDuckGo
     query = f"{category} products " + " ".join(known_competitors or [])
     results = []
+    results_urls = []
     try:
         with DDGS() as ddgs:
             # Get top 3 URLs
@@ -44,6 +45,7 @@ def discover_competitors(category: str, known_competitors: List[str]) -> List[di
                         soup = BeautifulSoup(page.text, "html.parser")
                         text_content = soup.get_text(separator=' ', strip=True)
                         results.append(text_content[:3000]) # Take first 3000 chars to avoid huge payload
+                        results_urls.append(url)
                 except Exception as e:
                     print(f"Error scraping {url}: {e}")
                     
@@ -77,11 +79,14 @@ def discover_competitors(category: str, known_competitors: List[str]) -> List[di
             ),
         )
         data = json.loads(response.text)
-        # return as list of dicts
-        return data.get("competitors", [])
+        competitors = data.get("competitors", [])
+        return {
+            "competitors": competitors,
+            "citations": results_urls
+        }
     except Exception as e:
         print(f"Extraction error: {e}")
-        return []
+        return {"competitors": [], "citations": []}
 
 def analyze_price_tiers(competitors: List[dict]) -> dict:
     """
@@ -188,3 +193,105 @@ def analyze_psychographics(category: str, review_snippets: List[str]) -> dict:
         "driver": primary_driver,
         "evidence_summary": evidence
     }
+class FailureSimulationSchema(BaseModel):
+    precedent_name: str
+    similarity_reason: str
+    mitigation_suggestion: str
+
+class FailureSimulationListSchema(BaseModel):
+    risks: List[FailureSimulationSchema]
+
+def assess_brand_credibility(brand_name: str, positioning: str) -> dict:
+    """
+    Scrape brand perception and score plausibility.
+    """
+    if not brand_name:
+        return {"score": None, "citations": []}
+        
+    query = f"{brand_name} reviews reputation"
+    results = []
+    results_urls = []
+    try:
+        with DDGS() as ddgs:
+            search_results = list(ddgs.text(query, max_results=3))
+            for res in search_results:
+                url = res.get("href")
+                if not url:
+                    continue
+                try:
+                    headers = {"User-Agent": "Mozilla/5.0"}
+                    page = requests.get(url, headers=headers, timeout=5)
+                    if page.status_code == 200:
+                        soup = BeautifulSoup(page.text, "html.parser")
+                        text_content = soup.get_text(separator=' ', strip=True)
+                        results.append(text_content[:3000])
+                        results_urls.append(url)
+                except Exception as e:
+                    print(f"Error scraping credibility for {url}: {e}")
+    except Exception as e:
+        print(f"DDGS error in credibility: {e}")
+        
+    if not results:
+        return {"score": None, "citations": []}
+        
+    combined_text = "\n\n---\n\n".join(results)
+    prompt = f"""
+    You are a brand strategy expert. Review the following recent public perception data about the brand "{brand_name}".
+    Then, score the plausibility (from 1.0 to 10.0) of this brand successfully pivoting to or launching the following new positioning/product: "{positioning}".
+    Return ONLY a raw float number between 1.0 and 10.0 representing the credibility score.
+    
+    Data:
+    {combined_text}
+    """
+    
+    if not client:
+        return {"score": None, "citations": []}
+        
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.1,
+            ),
+        )
+        score_text = response.text.strip()
+        score = float(score_text)
+        return {"score": score, "citations": results_urls}
+    except Exception as e:
+        print(f"Credibility scoring error: {e}")
+        return {"score": None, "citations": []}
+
+def simulate_failure(idea_summary: str, precedents: List[dict]) -> List[dict]:
+    """
+    Compare new idea against precedents to simulate failure risks.
+    """
+    if not idea_summary or not precedents or not client:
+        return []
+        
+    prompt = f"""
+    You are an expert product strategist. 
+    Analyze the following new product idea: "{idea_summary}"
+    
+    Compare it against the following list of historical product failures:
+    {json.dumps(precedents, indent=2)}
+    
+    Select the top 2 to 3 most relevant historical failures that share similar risks or characteristics with the new idea.
+    For each, explain the similarity reason and provide a mitigation suggestion.
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=FailureSimulationListSchema,
+                temperature=0.3,
+            ),
+        )
+        data = json.loads(response.text)
+        return data.get("risks", [])
+    except Exception as e:
+        print(f"Failure simulation error: {e}")
+        return []

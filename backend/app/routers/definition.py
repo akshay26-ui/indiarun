@@ -61,7 +61,11 @@ async def create_brand_brief(project_id: uuid.UUID, data: dict, db: AsyncSession
 
 @router.post("/whitespace/generate")
 async def generate_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    from app.agents.whitespace_agents import discover_competitors, analyze_price_tiers, analyze_psychographics
+    from app.agents.whitespace_agents import discover_competitors, analyze_price_tiers, analyze_psychographics, assess_brand_credibility, simulate_failure
+    import json
+    import os
+    from app.models.source_citation import SourceCitation
+    from app.models.failure_risk import FailureRisk
     
     result = await db.execute(select(Project).filter(Project.id == project_id))
     project = result.scalars().first()
@@ -76,8 +80,19 @@ async def generate_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(
     category = intake.category or project.idea_name
     known_competitors = intake.known_competitors or []
     
+    # Track citations to save later
+    all_citations = []
+    
     # 1. Discover
-    competitors = discover_competitors(category, known_competitors)
+    discovery_res = discover_competitors(category, known_competitors)
+    competitors = discovery_res.get("competitors", [])
+    for url in discovery_res.get("citations", []):
+        all_citations.append(SourceCitation(
+            project_id=project_id,
+            field_referenced="whitespace_summary",
+            source_url=url,
+            source_type="duckduckgo_scrape"
+        ))
     
     # 2. Price Tiers
     price_tiers = analyze_price_tiers(competitors)
@@ -92,10 +107,28 @@ async def generate_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(
     
     summary = f"Found {len(competitors)} competitors in category {category}. Price analysis identified opportunities in {price_tiers.get('tiers', [])}. Primary psychographic driver: {psychographics.get('driver')}."
     
+    # 4. Brand Credibility Assessment
+    brand_credibility_score = None
+    if intake.brand_name:
+        cred_res = assess_brand_credibility(intake.brand_name, project.idea_name or category)
+        brand_credibility_score = cred_res.get("score")
+        for url in cred_res.get("citations", []):
+            all_citations.append(SourceCitation(
+                project_id=project_id,
+                field_referenced="brand_credibility_score",
+                source_url=url,
+                source_type="duckduckgo_scrape"
+            ))
+
+    # Application-layer enforcement: Require at least one citation for whitespace_summary
+    if not all_citations:
+        raise HTTPException(status_code=400, detail="Cannot save whitespace_summary without at least one source citation.")
+
     if brief:
         brief.whitespace_summary = summary
         brief.psychographic_target = psychographics
         brief.price_tier_map = price_tiers
+        brief.brand_credibility_score = brand_credibility_score
         brief.approved = True
     else:
         brief = BrandBrief(
@@ -103,11 +136,47 @@ async def generate_whitespace(project_id: uuid.UUID, db: AsyncSession = Depends(
             whitespace_summary=summary,
             psychographic_target=psychographics,
             price_tier_map=price_tiers,
+            brand_credibility_score=brand_credibility_score,
             approved=True
         )
         db.add(brief)
         
     project.current_stage = "definition"
+    await db.commit()
+    await db.refresh(brief)
+    
+    # Save citations
+    # Delete old ones for this field first
+    old_cits = await db.execute(select(SourceCitation).filter(SourceCitation.project_id == project_id))
+    for old_c in old_cits.scalars().all():
+        await db.delete(old_c)
+    
+    for cit in all_citations:
+        db.add(cit)
+    
+    # 5. Failure Simulation
+    # Load precedents
+    precedents_path = os.path.join(os.path.dirname(__file__), "..", "data", "failure_precedents.json")
+    precedents = []
+    if os.path.exists(precedents_path):
+        with open(precedents_path, 'r') as f:
+            precedents = json.load(f)
+            
+    risks = simulate_failure(project.idea_name or category, precedents)
+    
+    # Delete old risks
+    old_risks = await db.execute(select(FailureRisk).filter(FailureRisk.brand_brief_id == brief.id))
+    for r in old_risks.scalars().all():
+        await db.delete(r)
+        
+    for r in risks:
+        db.add(FailureRisk(
+            brand_brief_id=brief.id,
+            precedent_name=r.get("precedent_name", ""),
+            similarity_reason=r.get("similarity_reason", ""),
+            mitigation_suggestion=r.get("mitigation_suggestion", "")
+        ))
+        
     await db.commit()
     
     return {"status": "ok"}
@@ -230,9 +299,35 @@ async def get_definition(project_id: uuid.UUID, db: AsyncSession = Depends(get_d
     result = await db.execute(select(PRD).filter(PRD.project_id == project_id))
     prd = result.scalars().first()
     
+    personas_list = []
+    for p in personas:
+        personas_list.append({
+            "id": str(p.id),
+            "name": p.name,
+            "quote": p.quote,
+            "demographics": p.demographics,
+            "scenario": p.scenario,
+            "goals": p.goals,
+            "pain_points": p.pain_points
+        })
+        
+    features_list = []
+    for f in features:
+        features_list.append({
+            "id": str(f.id),
+            "title": f.title,
+            "description": f.description,
+            "reach": f.reach,
+            "impact": f.impact,
+            "confidence": f.confidence,
+            "effort": f.effort,
+            "rice_score": f.rice_score,
+            "priority_label": f.priority_label
+        })
+        
     return {
-        "personas": personas,
-        "features": features,
+        "personas": personas_list,
+        "features": features_list,
         "prd": prd.content_markdown if prd else ""
     }
 

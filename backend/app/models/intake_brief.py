@@ -31,6 +31,7 @@ class IntakeBrief(Base):
     target_user: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     known_competitors: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
     category: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    brand_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     budget_constraint: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     timeline_constraint: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     

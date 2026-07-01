@@ -227,3 +227,5 @@ Nothing below requires a credit card to build the full V1 pipeline.
 - **Cold starts:** free-tier backend hosts (Render/Railway free) sleep after inactivity — the first SSE request after idle time will be slow. Fine for a demo/pitch, worth mentioning if a mentor tests it live.
 - **Scrape fragility:** DuckDuckGo scraping is free but less reliable than a paid SERP API — Prompt 44's retry/skip logic is doing real work here, don't skip it.
 - **Gemini free tier limits:** if you hit rate limits during heavy testing (Phase 2/3 especially), add simple request throttling rather than upgrading to a paid tier — V1 doesn't need production-scale throughput.
+
+I am building a software product called "StudySync". The problem is that college students struggle to manage overlapping assignment deadlines across different syllabi. The target user is busy university students. It is a software application. The category is productivity software, and known competitors include Notion and Todoist. We have a budget of $5000 and a timeline of 3 months.

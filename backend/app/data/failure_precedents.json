@@ -1,0 +1,92 @@
+[
+    {
+        "name": "Google Glass",
+        "industry": "Consumer Electronics / Wearables",
+        "description": "An optical head-mounted display designed in the shape of a pair of eyeglasses. It failed to gain traction due to privacy concerns, lack of clear use cases for consumers, high price point, and a socially awkward design.",
+        "failure_cause": "Misunderstood Target Persona"
+    },
+    {
+        "name": "Quibi",
+        "industry": "Streaming Media",
+        "description": "A short-form streaming platform designed specifically for smartphones. It launched during the pandemic when people were at home (not commuting), misjudged the competition from free platforms like TikTok/YouTube, and failed to secure a subscriber base despite massive funding.",
+        "failure_cause": "Market Timing / Macro Shifts"
+    },
+    {
+        "name": "Juicero",
+        "industry": "Smart Home Appliances",
+        "description": "A Wi-Fi connected juicer that required proprietary juice packs. It failed when consumers discovered the juice packs could be squeezed by hand faster and just as effectively as the expensive machine, rendering the hardware completely unnecessary.",
+        "failure_cause": "Over-engineering"
+    },
+    {
+        "name": "New Coke",
+        "industry": "Beverages",
+        "description": "A reformulation of the classic Coca-Cola recipe intended to combat Pepsi's sweeter taste. It caused massive consumer backlash from loyalists who felt alienated, proving that emotional connection to the original brand was more important than blind taste test results.",
+        "failure_cause": "Misunderstood Target Persona"
+    },
+    {
+        "name": "Amazon Fire Phone",
+        "industry": "Smartphones",
+        "description": "Amazon's attempt at a smartphone that featured 3D screen capabilities and a dedicated button to identify objects for purchase on Amazon. It was priced too high to compete with budget phones and lacked the ecosystem to compete with Apple/Samsung, offering features consumers didn't actually want.",
+        "failure_cause": "Lack of True Differentiation"
+    },
+    {
+        "name": "Kodak Digital",
+        "industry": "Photography",
+        "description": "Despite inventing the core technology for digital cameras, Kodak management resisted the shift away from film because it was highly profitable. By the time they fully embraced digital, competitors had already captured the market.",
+        "failure_cause": "Failure to Cannibalize Own Product"
+    },
+    {
+        "name": "Blockbuster Total Access",
+        "industry": "Entertainment Rental",
+        "description": "Blockbuster's late attempt to compete with Netflix's mail delivery service. It was too little too late, and their reliance on late fees for revenue meant they couldn't pivot their business model fast enough to survive the shift to streaming.",
+        "failure_cause": "Business Model Inflexibility"
+    },
+    {
+        "name": "Microsoft Zune",
+        "industry": "Portable Media Players",
+        "description": "Microsoft's answer to the iPod. While the hardware was decent, it launched years after the iPod had already established absolute dominance and didn't offer a compelling enough reason for users to switch ecosystems.",
+        "failure_cause": "Lack of True Differentiation"
+    },
+    {
+        "name": "Theranos",
+        "industry": "Health Tech",
+        "description": "Promised revolutionary blood testing from a single drop of blood. It failed spectacularly when it was revealed the technology simply didn't work as claimed, representing a failure of product delivery and massive regulatory/ethical breaches.",
+        "failure_cause": "Technological Impossibility / Fraud"
+    },
+    {
+        "name": "Segway",
+        "industry": "Personal Transportation",
+        "description": "Hyped as a revolution in urban transport. It failed as a consumer product because it was too expensive, too bulky for sidewalks, illegal on many streets, and solved a problem that walking or biking already solved adequately.",
+        "failure_cause": "Over-engineering"
+    },
+    {
+        "name": "Nintendo Virtual Boy",
+        "industry": "Gaming Consoles",
+        "description": "An early attempt at 3D VR gaming. It failed due to a monochromatic red display that caused eye strain, high price, lack of true portability, and a very limited library of games.",
+        "failure_cause": "Premature Technology"
+    },
+    {
+        "name": "Apple Newton",
+        "industry": "PDAs",
+        "description": "An early personal digital assistant with handwriting recognition. It launched with highly flawed handwriting software that became a cultural joke, and was too expensive and bulky for mass adoption.",
+        "failure_cause": "Over-promising and Under-delivering"
+    },
+    {
+        "name": "MoviePass",
+        "industry": "Entertainment Subscriptions",
+        "description": "Offered a subscription model allowing users to see a movie a day in theaters for $9.95/month. The unit economics were fundamentally flawed, and the company bled money rapidly as users actually utilized the service.",
+        "failure_cause": "Flawed Unit Economics"
+    },
+    {
+        "name": "Hoverboards (2015 Craze)",
+        "industry": "Personal Transport / Toys",
+        "description": "Self-balancing scooters that became a massive fad. The market flooded with cheap, unregulated knock-offs containing faulty lithium-ion batteries that caught fire, leading to bans by airlines and retailers.",
+        "failure_cause": "Supply Chain & Safety Failures"
+    },
+    {
+        "name": "Yik Yak",
+        "industry": "Social Media",
+        "description": "An anonymous, location-based social network popular on college campuses. It failed because it couldn't control severe cyberbullying and harassment on the platform, leading to bans on campuses and a mass exodus of users.",
+        "failure_cause": "Failure to Moderate / Toxic Community"
+    }
+]

@@ -27,10 +27,14 @@ export default function DefinitionPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Fetching definition for project:", projectId);
         const json = await fetchWithAuth(`/project/${projectId}/definition`);
+        console.log("Received definition data:", json);
+        console.log("Personas array:", json?.personas);
+        console.log("Features array:", json?.features);
         setData(json);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching definition:", err);
       } finally {
         setLoading(false);
       }
@@ -186,6 +190,15 @@ export default function DefinitionPage() {
                   />
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm flex-1">
+                  {persona.demographics && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {Object.entries(persona.demographics).map(([key, val]) => (
+                        <Badge key={key} variant="secondary" className="capitalize">
+                          {key.replace('_', ' ')}: {String(val)}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   <div>
                     <span className="font-semibold text-primary block mb-1">Scenario: </span>
                     <Textarea 
