@@ -114,8 +114,44 @@ export default function PrototypePage() {
   };
 
   const proceedToGtm = async () => {
-      // Advance project.current_stage to 'gtm' later if needed via an API, for now just route
+    const token = localStorage.getItem("token") || "";
+    try {
+      await fetch(`${API_BASE_URL}/api/project/${projectId}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ current_stage: "gtm" })
+      });
       router.push(`/project/${projectId}/gtm`);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to advance stage");
+    }
+  };
+
+  const handleDownloadSpec = async () => {
+    const token = localStorage.getItem("token") || "";
+    try {
+      const response = await fetch(`${API_BASE_URL}/project/${projectId}/prototype/download-spec`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to download spec");
+      const text = await response.text();
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `spec_sheet_${projectId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("Error downloading spec sheet.");
+    }
   };
 
   if (loading) {
@@ -234,6 +270,12 @@ export default function PrototypePage() {
                         <h4 className="font-semibold text-primary">Manufacturing Notes</h4>
                         <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{prototype.spec_sheet.manufacturing_notes}</p>
                       </div>
+                      <div className="pt-4 border-t border-border mt-4">
+                        <Button onClick={handleDownloadSpec} variant="outline" className="w-full">
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Spec Sheet
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground">Spec sheet failed to generate.</p>
@@ -253,6 +295,11 @@ export default function PrototypePage() {
                     <p className="text-sm text-muted-foreground truncate max-w-md">
                       {prototype.preview_url === 'pending_download' ? 'Vercel deploy skipped (no token). Ready for local run.' : prototype.preview_url}
                     </p>
+                    {prototype.capped_features && (
+                      <p className="text-xs text-amber-500 mt-1">
+                        Note: Auto-scaffolding is capped at the top 8 must-have features by RICE score. Lower-priority features were not included.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-3">

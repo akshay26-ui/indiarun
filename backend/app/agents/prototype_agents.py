@@ -23,9 +23,9 @@ async def generate_software_code(prd_text: str, features: list) -> str:
     Requirements:
     1. Use Tailwind CSS for styling (classes like `flex`, `p-4`, `bg-blue-500`, etc).
     2. Use lucide-react for icons (e.g., <Home />, <Settings />).
-    3. Mock any data state using React `useState` so the prototype is interactive (e.g., users can click buttons, type in forms, and see mock state updates).
+    3. Mock any data state using React `useState` so the prototype is interactive.
     4. Provide the raw TypeScript React code ONLY. Do not include markdown formatting or backticks around the code. Start directly with imports.
-    5. Do not use external libraries other than React, Tailwind, and lucide-react.
+    5. CRITICAL: Do NOT import any components from `@/components/ui/*` (e.g., no `import { Button } from "@/components/ui/button"`). These files do not exist in the export scaffold. Instead, use standard HTML tags (e.g., `<button>`, `<div>`, `<input>`) and style them heavily with Tailwind CSS to look professional.
     
     PRD:
     {prd_text}

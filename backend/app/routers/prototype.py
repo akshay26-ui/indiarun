@@ -111,6 +111,11 @@ async def get_prototype(project_id: str, db: AsyncSession = Depends(get_db), cur
     proto = result.scalars().first()
     if not proto:
         return {}
+    # Check if total features > 8
+    features_res = await db.execute(select(Feature).where(Feature.project_id == project_id))
+    total_features = len(features_res.scalars().all())
+    capped = total_features > 8
+    
     return {
         "id": str(proto.id),
         "type": proto.type,
@@ -118,7 +123,8 @@ async def get_prototype(project_id: str, db: AsyncSession = Depends(get_db), cur
         "code_export_url": proto.code_export_url,
         "concept_image_url": proto.concept_image_url,
         "spec_sheet": proto.spec_sheet,
-        "concept_stage_disclaimer": proto.concept_stage_disclaimer
+        "concept_stage_disclaimer": proto.concept_stage_disclaimer,
+        "capped_features": capped
     }
 
 @router.get("/download")
@@ -141,4 +147,25 @@ async def download_prototype_code(project_id: str, current_user: User = Depends(
         content=zip_buffer.getvalue(),
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename=prototype_{project_id}.zip"}
+    )
+
+@router.get("/download-spec")
+async def download_spec_sheet(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(Prototype).where(Prototype.project_id == project_id))
+    proto = result.scalars().first()
+    if not proto or proto.type != "physical" or not proto.spec_sheet:
+        raise HTTPException(status_code=404, detail="Spec sheet not found")
+        
+    disclaimer = "CONCEPT VISUALIZATION — NOT AN ENGINEERING-VALIDATED PROTOTYPE.\nThis generated spec sheet is an illustrative concept only. Do not use for manufacturing without engineering review.\n\n"
+    
+    content = disclaimer + "SPEC SHEET\n========================\n\n"
+    content += "MATERIALS:\n" + proto.spec_sheet.get("materials", "") + "\n\n"
+    content += "FORMAT & DIMENSIONS:\n" + proto.spec_sheet.get("format_dimensions", "") + "\n\n"
+    content += "PACKAGING:\n" + proto.spec_sheet.get("packaging", "") + "\n\n"
+    content += "MANUFACTURING NOTES:\n" + proto.spec_sheet.get("manufacturing_notes", "") + "\n"
+    
+    return Response(
+        content=content,
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=spec_sheet_{project_id}.txt"}
     )
