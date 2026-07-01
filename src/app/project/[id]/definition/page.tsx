@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, Download, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, Download, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { fetchWithAuth } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/api"; // I will define this if it's not exported, or just manually fetch it. 
@@ -23,6 +23,7 @@ export default function DefinitionPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [approving, setApproving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,6 +94,23 @@ export default function DefinitionPage() {
     }
   };
 
+  const handleGenerateDefinition = async () => {
+    try {
+      setGenerating(true);
+      await fetchWithAuth(`/project/${projectId}/definition/generate`, {
+        method: "POST"
+      });
+      // reload data
+      const json = await fetchWithAuth(`/project/${projectId}/definition`);
+      setData(json);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate definition");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handlePersonaUpdate = async (personaId: string, field: string, value: any) => {
     try {
       await fetchWithAuth(`/project/${projectId}/definition/personas/${personaId}`, {
@@ -134,11 +152,11 @@ export default function DefinitionPage() {
     }
   };
 
-  if (loading) {
+  if (loading || generating) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="ml-2 font-medium">Loading definition artifacts...</span>
+        <span className="ml-2 font-medium">{generating ? "AI is generating Personas and PRD... this takes about 30 seconds." : "Loading definition artifacts..."}</span>
       </div>
     );
   }
@@ -160,10 +178,18 @@ export default function DefinitionPage() {
             Review and edit AI-generated Personas, Feature Prioritization, and PRD.
           </p>
         </div>
-        <Button onClick={handleApprove} disabled={approving} size="lg">
-          {approving && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
-          Approve prioritization & PRD
-        </Button>
+        <div className="flex gap-4">
+          {(!data.personas || data.personas.length === 0) && (
+            <Button onClick={handleGenerateDefinition} disabled={generating} size="lg" variant="default">
+              <Sparkles className="mr-2 w-4 h-4" />
+              Generate Definition
+            </Button>
+          )}
+          <Button onClick={handleApprove} disabled={approving || data.personas?.length === 0} size="lg" className="bg-green-600 hover:bg-green-700">
+            {approving && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+            Approve prioritization & PRD
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="personas" className="space-y-6">

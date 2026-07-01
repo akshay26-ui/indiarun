@@ -27,12 +27,13 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
-from app.routers import auth, intake, definition
+from app.routers import auth, intake, definition, prototype
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(intake.router)
 app.include_router(whitespace.router)
 app.include_router(definition.router)
+app.include_router(prototype.router)
 
 
 @app.get("/health")

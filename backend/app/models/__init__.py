@@ -8,5 +8,6 @@ from app.models.feature import Feature
 from app.models.prd import PRD
 from app.models.failure_risk import FailureRisk
 from app.models.source_citation import SourceCitation
+from app.models.prototype import Prototype
 
-__all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD", "FailureRisk", "SourceCitation"]
+__all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD", "FailureRisk", "SourceCitation", "Prototype"]
