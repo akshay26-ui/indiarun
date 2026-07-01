@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import uuid
+import markdown
+from weasyprint import HTML
 from typing import List, Dict, Any
 
 from app.db.session import get_db
@@ -12,8 +15,20 @@ from app.models.persona import Persona
 from app.models.feature import Feature
 from app.models.prd import PRD
 from app.agents.definition_agents import generate_personas, generate_features, generate_prd
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/project/{project_id}", tags=["definition"])
+
+class PersonaUpdate(BaseModel):
+    name: str | None = None
+    quote: str | None = None
+    demographics: dict | None = None
+    scenario: str | None = None
+    goals: List[str] | None = None
+    pain_points: List[str] | None = None
+
+class FeatureUpdate(BaseModel):
+    effort: float
 
 @router.post("/brand_brief")
 async def create_brand_brief(project_id: uuid.UUID, data: dict, db: AsyncSession = Depends(get_db)):
@@ -152,3 +167,95 @@ async def get_definition(project_id: uuid.UUID, db: AsyncSession = Depends(get_d
         "features": features,
         "prd": prd.content_markdown if prd else ""
     }
+
+@router.patch("/definition/personas/{persona_id}")
+async def update_persona(project_id: uuid.UUID, persona_id: uuid.UUID, data: PersonaUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Persona).filter(Persona.id == persona_id, Persona.project_id == project_id))
+    persona = result.scalars().first()
+    
+    if not persona:
+        raise HTTPException(status_code=404, detail="Persona not found")
+        
+    update_data = data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(persona, key, value)
+        
+    await db.commit()
+    return {"status": "ok"}
+
+@router.patch("/definition/features/{feature_id}")
+async def update_feature(project_id: uuid.UUID, feature_id: uuid.UUID, data: FeatureUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Feature).filter(Feature.id == feature_id, Feature.project_id == project_id))
+    feature = result.scalars().first()
+    
+    if not feature:
+        raise HTTPException(status_code=404, detail="Feature not found")
+        
+    effort = data.effort
+    if effort <= 0:
+        raise HTTPException(status_code=400, detail="Effort must be greater than 0")
+        
+    feature.effort = effort
+    feature.rice_score = (float(feature.reach) * float(feature.impact) * float(feature.confidence)) / effort
+    
+    if feature.rice_score >= 80: priority = "very_high"
+    elif feature.rice_score >= 50: priority = "high"
+    elif feature.rice_score >= 20: priority = "medium"
+    else: priority = "low"
+    
+    feature.priority_label = priority
+    
+    await db.commit()
+    return {"status": "ok", "rice_score": feature.rice_score, "priority_label": priority}
+
+@router.post("/definition/approve")
+async def approve_definition(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PRD).filter(PRD.project_id == project_id))
+    prd = result.scalars().first()
+    
+    if not prd:
+        raise HTTPException(status_code=404, detail="PRD not found")
+        
+    prd.approved = True
+    
+    result = await db.execute(select(Project).filter(Project.id == project_id))
+    project = result.scalars().first()
+    if project:
+        project.current_stage = "prototype"
+        
+    await db.commit()
+    return {"status": "ok"}
+
+@router.get("/definition/prd/pdf")
+async def get_prd_pdf(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PRD).filter(PRD.project_id == project_id))
+    prd = result.scalars().first()
+    
+    if not prd:
+        raise HTTPException(status_code=404, detail="PRD not found")
+        
+    html_body = markdown.markdown(prd.content_markdown, extensions=['tables'])
+    html_content = f"""
+    <html>
+      <head>
+        <style>
+          body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+          h1, h2, h3 {{ color: #1a202c; }}
+          table {{ border-collapse: collapse; width: 100%; margin-bottom: 20px; }}
+          th, td {{ border: 1px solid #e2e8f0; padding: 8px; text-align: left; }}
+          th {{ background-color: #f7fafc; }}
+        </style>
+      </head>
+      <body>
+        {html_body}
+      </body>
+    </html>
+    """
+    
+    pdf_bytes = HTML(string=html_content).write_pdf()
+    
+    return Response(
+        content=pdf_bytes, 
+        media_type="application/pdf", 
+        headers={"Content-Disposition": f"attachment; filename=PRD_{project_id}.pdf"}
+    )

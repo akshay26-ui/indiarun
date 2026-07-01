@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel
@@ -14,6 +14,9 @@ router = APIRouter(prefix="/api/project", tags=["projects"])
 class ProjectCreate(BaseModel):
     idea_name: str
     product_type: str
+
+class ProjectUpdate(BaseModel):
+    current_stage: str
 
 class ProjectResponse(BaseModel):
     id: str
@@ -80,7 +83,6 @@ async def get_project(
     project = result.scalar_one_or_none()
     
     if not project:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Project not found")
         
     return {
@@ -92,3 +94,23 @@ async def get_project(
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
     }
+
+@router.put("/{project_id}")
+async def update_project(
+    project_id: str,
+    update_data: ProjectUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update project details (like current_stage)."""
+    stmt = select(Project).where(Project.id == project_id, Project.user_id == current_user.id)
+    result = await db.execute(stmt)
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    project.current_stage = update_data.current_stage
+    await db.commit()
+    
+    return {"status": "ok"}
