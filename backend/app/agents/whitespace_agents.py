@@ -295,3 +295,199 @@ def simulate_failure(idea_summary: str, precedents: List[dict]) -> List[dict]:
     except Exception as e:
         print(f"Failure simulation error: {e}")
         return []
+
+class RecommendedAttributeSchema(BaseModel):
+    attribute: str
+    rationale: str
+
+class RecommendedAttributesListSchema(BaseModel):
+    attributes: List[RecommendedAttributeSchema]
+
+def recommend_attributes(whitespace_summary: str, psychographic_target: dict, failure_risks: List[dict]) -> List[dict]:
+    """
+    Recommend attributes based on whitespace, psychographics, and failure risks.
+    """
+    if not whitespace_summary or not client:
+        return []
+
+    prompt = f"""
+    You are an expert product developer and brand strategist.
+    Based on the following analysis, recommend 3 to 5 concrete product attributes (e.g., specific features, ingredients, packaging styles, or positioning angles) that this new product should adopt to succeed.
+    
+    1. Whitespace Summary (Market Context):
+    {whitespace_summary}
+    
+    2. Psychographic Target (Consumer Motivation):
+    {json.dumps(psychographic_target, indent=2)}
+    
+    3. Potential Failure Risks & Mitigations:
+    {json.dumps(failure_risks, indent=2)}
+    
+    For each recommended attribute, provide a clear rationale explaining how it capitalizes on the whitespace, appeals to the psychographic driver, or mitigates a failure risk.
+    """
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=RecommendedAttributesListSchema,
+                temperature=0.4,
+            ),
+        )
+        data = json.loads(response.text)
+        return data.get("attributes", [])
+    except Exception as e:
+        print(f"Attribute recommendation error: {e}")
+        return []
+
+import asyncio
+
+async def run_whitespace_engine(project_id, db):
+    """
+    Async generator that executes all 5 sub-modules and yields SSE strings.
+    """
+    import json
+    import os
+    from app.models.project import Project
+    from app.models.intake_brief import IntakeBrief
+    from app.models.brand_brief import BrandBrief
+    from app.models.source_citation import SourceCitation
+    from app.models.failure_risk import FailureRisk
+    from sqlalchemy.future import select
+
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Fetching project context...\" }}\n\n"
+    
+    result = await db.execute(select(Project).filter(Project.id == project_id))
+    project = result.scalars().first()
+    if not project:
+        yield f"data: {{ \"type\": \"error\", \"message\": \"Project not found\" }}\n\n"
+        return
+
+    result = await db.execute(select(IntakeBrief).filter(IntakeBrief.project_id == project_id))
+    intake = result.scalars().first()
+    if not intake:
+        yield f"data: {{ \"type\": \"error\", \"message\": \"Missing intake brief\" }}\n\n"
+        return
+        
+    category = intake.category or project.idea_name
+    known_competitors = intake.known_competitors or []
+    
+    all_citations = []
+    
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Searching and scraping competitors...\" }}\n\n"
+    
+    # 1. Discover
+    discovery_res = discover_competitors(category, known_competitors)
+    competitors = discovery_res.get("competitors", [])
+    for url in discovery_res.get("citations", []):
+        all_citations.append(SourceCitation(
+            project_id=project_id,
+            field_referenced="whitespace_summary",
+            source_url=url,
+            source_type="duckduckgo_scrape"
+        ))
+    
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Analyzing price tiers...\" }}\n\n"
+    
+    # 2. Price Tiers
+    price_tiers = analyze_price_tiers(competitors)
+    
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Running psychographic sentiment analysis...\" }}\n\n"
+    
+    # 3. Psychographics
+    snippets = [c.get("review_snippet", "") for c in competitors]
+    psychographics = analyze_psychographics(category, snippets)
+    
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Assessing brand credibility...\" }}\n\n"
+    
+    # 4. Brand Credibility
+    brand_credibility_score = None
+    if intake.brand_name:
+        cred_res = assess_brand_credibility(intake.brand_name, project.idea_name or category)
+        brand_credibility_score = cred_res.get("score")
+        for url in cred_res.get("citations", []):
+            all_citations.append(SourceCitation(
+                project_id=project_id,
+                field_referenced="brand_credibility_score",
+                source_url=url,
+                source_type="duckduckgo_scrape"
+            ))
+
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Simulating historical failure risks...\" }}\n\n"
+    
+    # 5. Failure Simulation
+    precedents_path = os.path.join(os.path.dirname(__file__), "..", "data", "failure_precedents.json")
+    precedents = []
+    if os.path.exists(precedents_path):
+        with open(precedents_path, 'r') as f:
+            precedents = json.load(f)
+            
+    risks = simulate_failure(project.idea_name or category, precedents)
+    
+    summary = f"Found {len(competitors)} competitors in category {category}. Price analysis identified opportunities in {price_tiers.get('tiers', [])}. Primary psychographic driver: {psychographics.get('driver')}."
+    
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Generating concrete attribute recommendations...\" }}\n\n"
+    
+    # 6. Attribute Recommendation
+    recommended_attributes = recommend_attributes(summary, psychographics, risks)
+    
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Saving to database...\" }}\n\n"
+    
+    # Enforce citations
+    if not all_citations:
+        yield f"data: {{ \"type\": \"error\", \"message\": \"Cannot save whitespace_summary without at least one source citation.\" }}\n\n"
+        return
+
+    result = await db.execute(select(BrandBrief).filter(BrandBrief.project_id == project_id))
+    brief = result.scalars().first()
+    
+    if brief:
+        brief.whitespace_summary = summary
+        brief.psychographic_target = psychographics
+        brief.price_tier_map = price_tiers
+        brief.brand_credibility_score = brand_credibility_score
+        brief.recommended_attributes = recommended_attributes
+        brief.approved = True
+    else:
+        brief = BrandBrief(
+            project_id=project_id,
+            whitespace_summary=summary,
+            psychographic_target=psychographics,
+            price_tier_map=price_tiers,
+            brand_credibility_score=brand_credibility_score,
+            recommended_attributes=recommended_attributes,
+            approved=True
+        )
+        db.add(brief)
+        
+    project.current_stage = "definition"
+    await db.commit()
+    await db.refresh(brief)
+    
+    # Update citations
+    old_cits = await db.execute(select(SourceCitation).filter(SourceCitation.project_id == project_id))
+    for old_c in old_cits.scalars().all():
+        await db.delete(old_c)
+    
+    for cit in all_citations:
+        db.add(cit)
+        
+    # Update risks
+    old_risks = await db.execute(select(FailureRisk).filter(FailureRisk.brand_brief_id == brief.id))
+    for r in old_risks.scalars().all():
+        await db.delete(r)
+        
+    for r in risks:
+        db.add(FailureRisk(
+            brand_brief_id=brief.id,
+            precedent_name=r.get("precedent_name", ""),
+            similarity_reason=r.get("similarity_reason", ""),
+            mitigation_suggestion=r.get("mitigation_suggestion", "")
+        ))
+        
+    await db.commit()
+    
+    yield f"data: {{ \"type\": \"final_output\", \"brand_brief_id\": \"{brief.id}\" }}\n\n"
+
