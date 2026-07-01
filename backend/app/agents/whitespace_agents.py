@@ -376,11 +376,51 @@ async def run_whitespace_engine(project_id, db):
     
     all_citations = []
     
-    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Searching and scraping competitors...\" }}\n\n"
+    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Searching competitors, assessing credibility, and simulating failures in parallel...\" }}\n\n"
     
-    # 1. Discover
-    discovery_res = discover_competitors(category, known_competitors)
+    # We can run these independent tracks in parallel to save time:
+    # Track 1: Competitors -> Price Tiers -> Psychographics
+    async def competitor_track():
+        # 1. Discover
+        discovery_res = await asyncio.to_thread(discover_competitors, category, known_competitors)
+        competitors = discovery_res.get("competitors", [])
+        
+        # 2. Price Tiers
+        price_tiers = await asyncio.to_thread(analyze_price_tiers, competitors)
+        
+        # 3. Psychographics
+        snippets = [c.get("review_snippet", "") for c in competitors]
+        psychographics = await asyncio.to_thread(analyze_psychographics, category, snippets)
+        
+        return discovery_res, price_tiers, psychographics
+
+    # Track 2: Brand Credibility
+    async def credibility_track():
+        if intake.brand_name:
+            return await asyncio.to_thread(assess_brand_credibility, intake.brand_name, project.idea_name or category)
+        return None
+
+    # Track 3: Failure Simulation
+    async def failure_track():
+        precedents_path = os.path.join(os.path.dirname(__file__), "..", "data", "failure_precedents.json")
+        precedents = []
+        if os.path.exists(precedents_path):
+            with open(precedents_path, 'r') as f:
+                precedents = json.load(f)
+        return await asyncio.to_thread(simulate_failure, project.idea_name or category, precedents)
+        
+    # Execute all tracks in parallel
+    results = await asyncio.gather(
+        competitor_track(),
+        credibility_track(),
+        failure_track()
+    )
+    
+    (discovery_res, price_tiers, psychographics), cred_res, risks = results
+    
     competitors = discovery_res.get("competitors", [])
+    
+    # Collect citations
     for url in discovery_res.get("citations", []):
         all_citations.append(SourceCitation(
             project_id=project_id,
@@ -388,24 +428,9 @@ async def run_whitespace_engine(project_id, db):
             source_url=url,
             source_type="duckduckgo_scrape"
         ))
-    
-    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Analyzing price tiers...\" }}\n\n"
-    
-    # 2. Price Tiers
-    price_tiers = analyze_price_tiers(competitors)
-    
-    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Running psychographic sentiment analysis...\" }}\n\n"
-    
-    # 3. Psychographics
-    snippets = [c.get("review_snippet", "") for c in competitors]
-    psychographics = analyze_psychographics(category, snippets)
-    
-    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Assessing brand credibility...\" }}\n\n"
-    
-    # 4. Brand Credibility
+        
     brand_credibility_score = None
-    if intake.brand_name:
-        cred_res = assess_brand_credibility(intake.brand_name, project.idea_name or category)
+    if cred_res:
         brand_credibility_score = cred_res.get("score")
         for url in cred_res.get("citations", []):
             all_citations.append(SourceCitation(
@@ -415,23 +440,12 @@ async def run_whitespace_engine(project_id, db):
                 source_type="duckduckgo_scrape"
             ))
 
-    yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Simulating historical failure risks...\" }}\n\n"
-    
-    # 5. Failure Simulation
-    precedents_path = os.path.join(os.path.dirname(__file__), "..", "data", "failure_precedents.json")
-    precedents = []
-    if os.path.exists(precedents_path):
-        with open(precedents_path, 'r') as f:
-            precedents = json.load(f)
-            
-    risks = simulate_failure(project.idea_name or category, precedents)
-    
     summary = f"Found {len(competitors)} competitors in category {category}. Price analysis identified opportunities in {price_tiers.get('tiers', [])}. Primary psychographic driver: {psychographics.get('driver')}."
     
     yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Generating concrete attribute recommendations...\" }}\n\n"
     
     # 6. Attribute Recommendation
-    recommended_attributes = recommend_attributes(summary, psychographics, risks)
+    recommended_attributes = await asyncio.to_thread(recommend_attributes, summary, psychographics, risks)
     
     yield f"data: {{ \"type\": \"reasoning_step\", \"message\": \"Saving to database...\" }}\n\n"
     
