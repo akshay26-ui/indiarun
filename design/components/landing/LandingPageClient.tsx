@@ -5,61 +5,30 @@ import Prism from './Prism';
 import CardNav from './CardNav';
 import StickyCardStack from './StickyCardStack';
 import TiltedCard from './TiltedCard';
+import { motion, useMotionValue, useSpring } from 'motion/react';
 import { Package, Cpu, Target, ShoppingCart } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN TOKENS — single source of truth for the colour/type system
    ═══════════════════════════════════════════════════════════════════════════ */
 const T = {
-  bg:          '#030508',     // Deep Obsidian
-  primaryMuted:'rgba(79,70,229,0.7)', // Deep Indigo (muted)
-  violetMuted: '#9B51E0',     // Neon Amethyst (muted)
-  primary:     '#4F46E5',     // Premium Indigo
-  indigoMid:   '#818CF8',     // Mid-tone indigo for accents
-  violetLight: '#C4B5FD',     // Soft lavender for highlights
-  amber:       '#FF3366',     // Neon Pink
+  bg:          '#0C0A09',     // Warm Obsidian
+  primaryMuted:'rgba(202, 138, 4, 0.4)', // Muted Gold
+  violetMuted: 'rgba(234, 179, 8, 0.3)', // Soft Gold
+  primary:     '#EAB308',     // Gold
+  indigoMid:   '#FACC15',     // Bright Gold
+  violetLight: '#FEF08A',     // Soft Yellow
+  amber:       '#F59E0B',     // Amber
   fog92:       'rgba(255,255,255,0.92)',
   fog58:       'rgba(255,255,255,0.70)',
   fog38:       'rgba(255,255,255,0.45)',
   fog25:       'rgba(255,255,255,0.25)',
   fog12:       'rgba(255,255,255,0.12)',
   fog06:       'rgba(255,255,255,0.06)',
-  fontDisplay: "'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif",
-  fontBody:    "'Inter', 'Hanken Grotesk', system-ui, sans-serif",
+  fontDisplay: "'Cormorant', 'Playfair Display', serif",
+  fontBody:    "'Montserrat', 'Inter', system-ui, sans-serif",
   fontMono:    "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
 } as const;
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   HOOKS
-   ═══════════════════════════════════════════════════════════════════════════ */
-function useInViewReveal() {
-  useEffect(() => {
-    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    if (!els.length) return;
-    // Mark already-visible on load
-    for (const el of els) {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight * 0.88 && r.bottom > 0) {
-        el.setAttribute('data-reveal-state', 'in');
-      }
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            (e.target as HTMLElement).setAttribute('data-reveal-state', 'in');
-            io.unobserve(e.target);
-          }
-        }
-      },
-      { root: null, threshold: 0.12 },
-    );
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-}
-
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ANIMATED COUNTER — counts up when in view
@@ -121,10 +90,47 @@ const handleCardTiltLeave = (e: React.MouseEvent<HTMLDivElement>) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MAGNETIC BUTTON
+   ═══════════════════════════════════════════════════════════════════════════ */
+function MagneticButton({ children, href, className, style }: any) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springConfig = { damping: 15, stiffness: 150, mass: 0.1 };
+  const springX = useSpring(x, springConfig);
+  const springY = useSpring(y, springConfig);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((e.clientX - centerX) * 0.25);
+    y.set((e.clientY - centerY) * 0.25);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.a
+      href={href}
+      className={className}
+      style={{ ...style, x: springX, y: springY }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      {children}
+    </motion.a>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function LandingPageClient() {
-  useInViewReveal();
   const lastScrollY    = useRef(0);
   const lastScrollTime = useRef(0);
   const [scrolled, setScrolled] = useState(false);
@@ -151,31 +157,14 @@ export default function LandingPageClient() {
   ];
 
   return (
-    <div className="relative selection:bg-[#818CF8]/20" style={{ fontFamily: T.fontBody, color: T.fog92 }}>
+    <div className="relative selection:bg-[#FACC15]/20" style={{ fontFamily: T.fontBody, color: T.fog92 }}>
 
       {/* ────────────────────────────────────────────────────────────────────
            GLOBAL STYLES — reveal animations + custom scrollbar
            ──────────────────────────────────────────────────────────────────── */}
       <style>{`
-        /* Scroll reveal */
-        [data-reveal]{
-          opacity:0;
-          transform:translateY(18px);
-          transition:opacity 800ms cubic-bezier(0.22,1,0.36,1), transform 800ms cubic-bezier(0.22,1,0.36,1);
-          will-change:opacity,transform;
-        }
-        [data-reveal][data-reveal-state="in"]{
-          opacity:1;
-          transform:translateY(0);
-        }
-        /* Stagger children */
-        [data-reveal-stagger] > *:nth-child(1){ transition-delay:0ms; }
-        [data-reveal-stagger] > *:nth-child(2){ transition-delay:80ms; }
-        [data-reveal-stagger] > *:nth-child(3){ transition-delay:160ms; }
-        [data-reveal-stagger] > *:nth-child(4){ transition-delay:240ms; }
-        [data-reveal-stagger] > *:nth-child(5){ transition-delay:320ms; }
-        [data-reveal-stagger] > *:nth-child(6){ transition-delay:400ms; }
-
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+        
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -344,58 +333,86 @@ export default function LandingPageClient() {
 
 
 
-          {/* Headline */}
-          <h1
-            className="text-[clamp(2.3rem,5.2vw,4.25rem)] font-extrabold tracking-[-0.045em] leading-[1.08] mb-6 max-w-3xl"
-            style={{ fontFamily: T.fontDisplay, color: T.fog92 }}
-            data-reveal
+          {/* Kinetic Headline */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-8 relative z-10"
+            style={{ mixBlendMode: 'difference' }}
           >
-            Product engineering, <br />
-            <span style={{ color: T.indigoMid }}>autonomously.</span>
-          </h1>
+            <h1
+              className="font-extrabold tracking-tighter uppercase leading-[0.85] text-center"
+              style={{ fontFamily: T.fontDisplay, color: T.fog92, fontSize: 'clamp(3rem, 10vw, 8rem)' }}
+            >
+              ENGINEERING <br />
+              <span 
+                className="text-transparent" 
+                style={{ WebkitTextStroke: `2px ${T.fog92}` }}
+              >
+                UNLEASHED
+              </span>
+            </h1>
+          </motion.div>
 
-          {/* Sub copy */}
-          <p
-            className="text-[15px] md:text-[17px] leading-[1.65] max-w-xl mb-10 text-white/55"
-            style={{ fontFamily: T.fontBody }}
-            data-reveal
+          {/* Asymmetric Glassmorphic Sub-copy */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-12 max-w-xl mx-auto p-6 md:p-8 rounded-2xl relative z-20 tilt-card text-left"
+            style={{
+              background: 'rgba(3, 5, 8, 0.4)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            }}
+            onMouseMove={handleCardTilt}
+            onMouseLeave={handleCardTiltLeave}
           >
-            Aura Agent researches your market, designs interfaces, builds roadmaps, 
-            and ships functional prototypes — bringing your ideas to life automatically.
-          </p>
+            <div className="absolute top-3 left-4 flex gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-red-500/50" />
+              <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
+              <div className="w-2 h-2 rounded-full bg-green-500/50" />
+            </div>
+            <p
+              className="text-[15px] md:text-[17px] leading-[1.65] text-white/70 mt-2 font-mono"
+            >
+              <span style={{ color: T.primary }}>{'>'}</span> Aura Agent researches your market, designs interfaces, builds roadmaps, and ships prototypes automatically.
+              <motion.span
+                animate={{ opacity: [1, 0] }}
+                transition={{ repeat: Infinity, duration: 0.8 }}
+                className="inline-block w-2 h-4 bg-white/70 ml-1 translate-y-1"
+              />
+            </p>
+          </motion.div>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center gap-4" data-reveal>
-            <a
+          {/* Magnetic CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="flex flex-col sm:flex-row items-center gap-6 relative z-20"
+          >
+            <MagneticButton
               href="/signup"
-              className="px-8 py-4 font-semibold text-[15px] rounded-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-10 py-5 font-bold text-[16px] rounded-[30px] relative overflow-hidden group flex items-center justify-center gap-2"
               style={{
                 fontFamily: T.fontBody,
-                background: T.primary,
+                background: T.fog92,
                 color: T.bg,
-                boxShadow: `0 0 30px rgba(79,70,229,0.30)`
+                boxShadow: `0 0 40px ${T.primary}44`
               }}
             >
-              Get started free →
-            </a>
-            <a
-              href="#pipeline"
-              className="px-8 py-4 text-[15px] rounded-2xl transition-all duration-200"
-              style={{
-                fontFamily: T.fontBody,
-                color: T.fog58,
-                border: '1px solid rgba(255,255,255,0.18)',
-                background: 'rgba(255,255,255,0.04)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = T.fog92; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = T.fog58; }}
-            >
-              Explore the pipeline
-            </a>
-          </div>
+              <span className="relative z-10 flex items-center gap-2">
+                INITIALIZE AGENT <Cpu size={18} />
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0" />
+            </MagneticButton>
+          </motion.div>
 
           {/* Scroll indicator */}
-          <div 
+          <motion.div 
             style={{ 
               position: 'absolute', 
               bottom: '2.5rem', 
@@ -406,7 +423,9 @@ export default function LandingPageClient() {
               alignItems: 'center', 
               gap: '10px' 
             }} 
-            data-reveal
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1 }}
           >
             <span className="text-[10px] tracking-[0.15em] uppercase font-medium" style={{ color: T.fog25, fontFamily: T.fontMono }}>
               scroll
@@ -420,13 +439,19 @@ export default function LandingPageClient() {
                 style={{ background: `linear-gradient(to bottom, ${T.primary}, transparent)` }} 
               />
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* ────────────────────────────────────────────────────────────────
              METRICS BAR — social proof strip
              ──────────────────────────────────────────────────────────────── */}
-        <section className="relative py-20 px-6" data-reveal>
+        <motion.section 
+          className="relative py-20 px-6"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
           <div
             className="max-w-5xl mx-auto rounded-3xl p-10 md:p-14"
             style={{
@@ -443,14 +468,20 @@ export default function LandingPageClient() {
               <AnimatedStat value={50}  suffix="ms" label="Avg response time" />
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* ────────────────────────────────────────────────────────────────
              PIPELINE — scroll-stacked cards
              ──────────────────────────────────────────────────────────────── */}
         <section id="pipeline">
           {/* Section header */}
-          <div className="text-center px-6 pt-28 pb-8" data-reveal>
+          <motion.div 
+            className="text-center px-6 pt-28 pb-8"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+          >
             <h2
               className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight"
               style={{ fontFamily: T.fontDisplay, color: T.fog92 }}
@@ -460,7 +491,7 @@ export default function LandingPageClient() {
             <p className="mt-3 text-[15px] max-w-lg mx-auto" style={{ color: T.fog38, fontFamily: T.fontBody }}>
               Each card is a decision gate. Scroll to step through the autonomous product lifecycle.
             </p>
-          </div>
+          </motion.div>
 
           {/* StickyCardStack — GSAP-powered card pinning and stacking */}
           <div className="px-6 pb-0">
@@ -574,13 +605,25 @@ export default function LandingPageClient() {
              FEATURES — asymmetric bento grid
              ──────────────────────────────────────────────────────────────── */}
         <section id="features" className="px-6 pt-12 pb-28 max-w-7xl mx-auto">
-          <div className="text-center mb-16" data-reveal>
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
               What makes Aura different.
             </h2>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-12 gap-5" data-reveal data-reveal-stagger="">
+          <motion.div 
+            className="grid md:grid-cols-12 gap-5"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             {/* Large feature card — spans 7 cols */}
             <div
               className="md:col-span-7 rounded-[28px] p-8 md:p-10 tilt-card"
@@ -714,7 +757,7 @@ export default function LandingPageClient() {
                 </p>
               </div>
             ))}
-          </div>
+          </motion.div>
         </section>
 
         {/* ────────────────────────────────────────────────────────────────
@@ -722,16 +765,28 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section id="industry" className="px-6 py-28">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16" data-reveal>
+            <motion.div 
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+            >
               <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
                 Built for product teams who ship.
               </h2>
               <p className="mt-3 text-[15px] max-w-lg mx-auto" style={{ color: T.fog38, fontFamily: T.fontBody }}>
                 Whether you're launching FMCG, SaaS, or D2C — Aura adapts its intelligence pipeline to your vertical.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5" data-reveal data-reveal-stagger="">
+            <motion.div 
+              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
               {([
                 { name: 'FMCG & CPG', desc: 'Packaging, shelf strategy, competitive benchmarking', iconName: 'Package' },
                 { name: 'SaaS & Tech', desc: 'Feature prioritization, user research, PLG loops', iconName: 'Cpu' },
@@ -781,7 +836,7 @@ export default function LandingPageClient() {
                   />
                 );
               })}
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -790,16 +845,24 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section className="px-6 py-28">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-16" data-reveal>
+            <motion.div 
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+            >
               <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
                 Three moves. Ship faster.
               </h2>
-            </div>
+            </motion.div>
 
-            <div 
+            <motion.div 
               className="grid md:grid-cols-3 gap-0 relative p-8 md:p-12 rounded-[32px] mx-4 md:mx-0" 
-              data-reveal 
-              data-reveal-stagger=""
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
               style={{
                 background: 'rgba(3, 5, 8, 0.45)',
                 borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -849,7 +912,7 @@ export default function LandingPageClient() {
                   </p>
                 </div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -857,13 +920,25 @@ export default function LandingPageClient() {
              PRICING
              ──────────────────────────────────────────────────────────────── */}
         <section id="pricing" className="px-6 py-28">
-          <div className="text-center mb-16" data-reveal>
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
               Simple. Transparent. No surprise bills.
             </h2>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-col md:flex-row gap-6 max-w-3xl mx-auto" data-reveal data-reveal-stagger="">
+          <motion.div 
+            className="flex flex-col md:flex-row gap-6 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             {[
               {
                 tier: 'Starter',
@@ -942,13 +1017,19 @@ export default function LandingPageClient() {
                 </a>
               </div>
             ))}
-          </div>
+          </motion.div>
         </section>
 
         {/* ────────────────────────────────────────────────────────────────
              CTA BANNER — final conversion
              ──────────────────────────────────────────────────────────────── */}
-        <section className="px-6 py-28" data-reveal>
+        <motion.section 
+          className="px-6 py-28"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
           <div
             className="max-w-4xl mx-auto rounded-[32px] p-12 md:p-16 text-center relative overflow-hidden"
             style={{
@@ -975,10 +1056,10 @@ export default function LandingPageClient() {
               onMouseEnter={e => { e.currentTarget.style.background = T.primaryMuted; }}
               onMouseLeave={e => { e.currentTarget.style.background = T.primary; }}
             >
-              Get started free →
+              Get Early Access
             </a>
           </div>
-        </section>
+        </motion.section>
 
         {/* ────────────────────────────────────────────────────────────────
              FOOTER

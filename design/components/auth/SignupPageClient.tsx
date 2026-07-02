@@ -9,22 +9,22 @@ import SpotlightCard from './SpotlightCard';
 
 const Lightfall = dynamic(() => import('../landing/Lightfall'), { ssr: false });
 
-/* ─── Tokens ── */
+/* ─── Tokens tuned to match the Dark Mode Luxury Gold palette ─── */
 const T = {
-  bg:          '#020410',
-  primary:     '#4F46E5',
-  violet:      '#7C3AED',
-  indigo:      '#818CF8',
-  violetLight: '#C4B5FD',
+  bg:          '#0C0A09',
+  primary:     '#EAB308',
+  violet:      '#CA8A04',
+  indigo:      '#FACC15',
+  violetLight: '#FEF08A',
   text:        'rgba(255,255,255,0.95)',
-  textMuted:   'rgba(220,225,255,0.70)',
-  textDim:     'rgba(200,210,255,0.40)',
-  border:      'rgba(255, 255, 255, 0.08)', // Thin bevel border
-  borderFocus: 'rgba(129, 140, 248, 0.60)',
+  textMuted:   'rgba(255,250,230,0.70)',
+  textDim:     'rgba(255,250,220,0.40)',
+  border:      'rgba(255, 255, 255, 0.08)',
+  borderFocus: 'rgba(250, 204, 21, 0.50)',
   inputBg:     'rgba(255, 255, 255, 0.03)',
-  cardBg:      'rgba(10, 12, 30, 0.40)', // Rich dark liquid glass
-  fontDisplay: "'Cabinet Grotesk','Plus Jakarta Sans',system-ui,sans-serif",
-  fontBody:    "'Hanken Grotesk','Inter',system-ui,sans-serif",
+  cardBg:      'rgba(12, 10, 9, 0.60)',
+  fontDisplay: "'Cormorant', 'Playfair Display', serif",
+  fontBody:    "'Montserrat', 'Inter', system-ui, sans-serif",
   fontMono:    "'JetBrains Mono','SF Mono',monospace",
 } as const;
 
