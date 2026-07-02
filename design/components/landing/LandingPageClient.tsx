@@ -5,6 +5,8 @@ import Prism from './Prism';
 import CardNav from './CardNav';
 import StickyCardStack from './StickyCardStack';
 import TiltedCard from './TiltedCard';
+import StaircaseLoader from './StaircaseLoader';
+import ScrollFloat from './ScrollFloat';
 import { motion, useMotionValue, useSpring } from 'motion/react';
 import { Package, Cpu, Target, ShoppingCart } from 'lucide-react';
 
@@ -158,6 +160,7 @@ export default function LandingPageClient() {
 
   return (
     <div className="relative selection:bg-[#FACC15]/20" style={{ fontFamily: T.fontBody, color: T.fog92 }}>
+      <StaircaseLoader />
 
       {/* ────────────────────────────────────────────────────────────────────
            GLOBAL STYLES — reveal animations + custom scrollbar
@@ -194,8 +197,8 @@ export default function LandingPageClient() {
 
         /* Glow pulse for CTA */
         @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 30px rgba(79,70,229,0.30), 0 0 60px rgba(79,70,229,0.15); }
-          50% { box-shadow: 0 0 50px rgba(79,70,229,0.45), 0 0 90px rgba(79,70,229,0.25); }
+          0%, 100% { box-shadow: 0 0 30px rgba(234,179,8,0.30), 0 0 60px rgba(234,179,8,0.15); }
+          50% { box-shadow: 0 0 50px rgba(234,179,8,0.45), 0 0 90px rgba(234,179,8,0.25); }
         }
         .glow-cta { animation: glow-pulse 3s ease-in-out infinite; }
 
@@ -475,23 +478,23 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section id="pipeline">
           {/* Section header */}
-          <motion.div 
-            className="text-center px-6 pt-28 pb-8"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2
-              className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight"
-              style={{ fontFamily: T.fontDisplay, color: T.fog92 }}
+          <div className="text-center px-6 pt-28 pb-8">
+            <ScrollFloat
+              containerClassName="mt-4"
+              textClassName="text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight"
+              containerStyle={{ fontFamily: T.fontDisplay, color: T.fog92 }}
             >
               Six stages. Zero busywork.
-            </h2>
-            <p className="mt-3 text-[15px] max-w-lg mx-auto" style={{ color: T.fog38, fontFamily: T.fontBody }}>
+            </ScrollFloat>
+            <ScrollFloat
+              tag="p"
+              containerClassName="mt-3 max-w-lg mx-auto"
+              textClassName="text-[15px]"
+              containerStyle={{ color: T.fog38, fontFamily: T.fontBody }}
+            >
               Each card is a decision gate. Scroll to step through the autonomous product lifecycle.
-            </p>
-          </motion.div>
+            </ScrollFloat>
+          </div>
 
           {/* StickyCardStack — GSAP-powered card pinning and stacking */}
           <div className="px-6 pb-0">
@@ -605,17 +608,15 @@ export default function LandingPageClient() {
              FEATURES — asymmetric bento grid
              ──────────────────────────────────────────────────────────────── */}
         <section id="features" className="px-6 pt-12 pb-28 max-w-7xl mx-auto">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
+          <div className="text-center mb-16">
+            <ScrollFloat 
+              containerClassName="mt-4"
+              textClassName="text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" 
+              containerStyle={{ fontFamily: T.fontDisplay, color: T.fog92 }}
+            >
               What makes Aura different.
-            </h2>
-          </motion.div>
+            </ScrollFloat>
+          </div>
 
           <motion.div 
             className="grid md:grid-cols-12 gap-5"
@@ -765,20 +766,23 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section id="industry" className="px-6 py-28">
           <div className="max-w-6xl mx-auto">
-            <motion.div 
-              className="text-center mb-16"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
+            <div className="text-center mb-16">
+              <ScrollFloat 
+                containerClassName="mt-4"
+                textClassName="text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" 
+                containerStyle={{ fontFamily: T.fontDisplay, color: T.fog92 }}
+              >
                 Built for product teams who ship.
-              </h2>
-              <p className="mt-3 text-[15px] max-w-lg mx-auto" style={{ color: T.fog38, fontFamily: T.fontBody }}>
+              </ScrollFloat>
+              <ScrollFloat
+                tag="p"
+                containerClassName="mt-3 max-w-lg mx-auto"
+                textClassName="text-[15px]"
+                containerStyle={{ color: T.fog38, fontFamily: T.fontBody }}
+              >
                 Whether you're launching FMCG, SaaS, or D2C — Aura adapts its intelligence pipeline to your vertical.
-              </p>
-            </motion.div>
+              </ScrollFloat>
+            </div>
 
             <motion.div 
               className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"
@@ -845,17 +849,15 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section className="px-6 py-28">
           <div className="max-w-5xl mx-auto">
-            <motion.div 
-              className="text-center mb-16"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
+            <div className="text-center mb-16">
+              <ScrollFloat 
+                containerClassName="mt-4"
+                textClassName="text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" 
+                containerStyle={{ fontFamily: T.fontDisplay, color: T.fog92 }}
+              >
                 Three moves. Ship faster.
-              </h2>
-            </motion.div>
+              </ScrollFloat>
+            </div>
 
             <motion.div 
               className="grid md:grid-cols-3 gap-0 relative p-8 md:p-12 rounded-[32px] mx-4 md:mx-0" 
@@ -920,17 +922,15 @@ export default function LandingPageClient() {
              PRICING
              ──────────────────────────────────────────────────────────────── */}
         <section id="pricing" className="px-6 py-28">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
+          <div className="text-center mb-16">
+            <ScrollFloat 
+              containerClassName="mt-4"
+              textClassName="text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" 
+              containerStyle={{ fontFamily: T.fontDisplay, color: T.fog92 }}
+            >
               Simple. Transparent. No surprise bills.
-            </h2>
-          </motion.div>
+            </ScrollFloat>
+          </div>
 
           <motion.div 
             className="flex flex-col md:flex-row gap-6 max-w-3xl mx-auto"
@@ -1023,17 +1023,11 @@ export default function LandingPageClient() {
         {/* ────────────────────────────────────────────────────────────────
              CTA BANNER — final conversion
              ──────────────────────────────────────────────────────────────── */}
-        <motion.section 
-          className="px-6 py-28"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-        >
+        <section className="px-6 py-28">
           <div
             className="max-w-4xl mx-auto rounded-[32px] p-12 md:p-16 text-center relative overflow-hidden"
             style={{
-              background: 'linear-gradient(160deg, rgba(79,184,199,0.12) 0%, rgba(108,97,201,0.08) 50%, rgba(12,15,20,0.9) 100%)',
+              background: 'linear-gradient(160deg, rgba(234,179,8,0.12) 0%, rgba(202,138,4,0.08) 50%, rgba(12,15,20,0.9) 100%)',
               border: '1px solid rgba(255,255,255,0.08)',
               backdropFilter: 'blur(32px)',
             }}
@@ -1043,9 +1037,13 @@ export default function LandingPageClient() {
               <div className="orbit-ring w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full border border-dashed opacity-[0.04]" style={{ borderColor: T.primary }} />
             </div>
 
-            <h2 className="text-[clamp(1.6rem,4vw,2.8rem)] font-bold tracking-tight mb-4 relative" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
+            <ScrollFloat 
+              containerClassName="mb-4 relative"
+              textClassName="text-[clamp(1.6rem,4vw,2.8rem)] font-bold tracking-tight" 
+              containerStyle={{ fontFamily: T.fontDisplay, color: T.fog92 }}
+            >
               Ready to ship faster?
-            </h2>
+            </ScrollFloat>
             <p className="text-[15px] mb-10 max-w-md mx-auto relative" style={{ fontFamily: T.fontBody, color: T.fog58 }}>
               Start with a free brief. See what Aura discovers about your market before you commit.
             </p>
@@ -1059,7 +1057,7 @@ export default function LandingPageClient() {
               Get Early Access
             </a>
           </div>
-        </motion.section>
+        </section>
 
         {/* ────────────────────────────────────────────────────────────────
              FOOTER
