@@ -18,3 +18,4 @@ beautifulsoup4
 duckduckgo-search
 pytrends
 requests
+httpx
