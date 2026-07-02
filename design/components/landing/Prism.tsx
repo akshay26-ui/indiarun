@@ -1,12 +1,10 @@
-'use client';
-
 import React, { useEffect, useRef } from 'react';
 import { Renderer, Triangle, Program, Mesh } from 'ogl';
 
 type PrismProps = {
   height?: number;
   baseWidth?: number;
-  animationType?: 'rotate' | 'hover' | '3drotate';
+  animationType?: 'rotate' | 'hover' | '3drotate' | 'scroll';
   glow?: number;
   offset?: { x?: number; y?: number };
   noise?: number;
@@ -177,23 +175,16 @@ const Prism: React.FC<PrismProps> = ({
           wob = mat2(c0, c1, c2, c0);
         }
 
-        const int STEPS = 90;
+        const int STEPS = 100;
         for (int i = 0; i < STEPS; i++) {
           p = vec3(f, z);
           p.xz = p.xz * wob;
           p = uRot * p;
           vec3 q = p;
           q.y += centerShift;
-
-          d = 0.04 + 0.15 * abs(sdPyramidUpInv(q));
+          d = 0.1 + 0.2 * abs(sdPyramidUpInv(q));
           z -= d;
-
-          float wave = sin((p.y + z) * cf) * 0.5 + 0.5;
-          vec3 baseColor = vec3(0.76, 0.73, 0.89);
-          vec3 purpleTouch = vec3(0.45, 0.15, 0.78);
-          vec3 c = mix(baseColor, purpleTouch, wave * 0.38);
-
-          o += vec4(c * 1.6, 1.6) / d;
+          o += (sin((p.y + z) * cf + vec4(0.0, 1.0, 2.0, 3.0)) + 1.0) / d;
         }
 
         o = tanh4(o * o * (uGlow * uBloom) / 1e5);
@@ -210,7 +201,7 @@ const Prism: React.FC<PrismProps> = ({
           col = clamp(hueRotation(uHueShift) * col, 0.0, 1.0);
         }
 
-        gl_FragColor = vec4(col, o.a * 0.16);
+        gl_FragColor = vec4(col, o.a);
       }
     `;
 
@@ -319,9 +310,6 @@ const Prism: React.FC<PrismProps> = ({
       roll = 0;
     let targetYaw = 0,
       targetPitch = 0;
-    let lastScrollYVal = typeof window !== 'undefined' ? window.scrollY : 0;
-    let accumulatedYaw = Math.PI; // start at 180 deg
-    let lastT = performance.now();
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
     const pointer = { x: 0, y: 0, inside: true };
@@ -344,6 +332,10 @@ const Prism: React.FC<PrismProps> = ({
     };
 
     let onPointerMove: ((e: PointerEvent) => void) | null = null;
+    let onScroll: (() => void) | null = null;
+    let lastScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+    let scrollVelocity = 0;
+
     if (animationType === 'hover') {
       onPointerMove = (e: PointerEvent) => {
         onMove(e);
@@ -353,6 +345,15 @@ const Prism: React.FC<PrismProps> = ({
       window.addEventListener('mouseleave', onLeave);
       window.addEventListener('blur', onBlur);
       program.uniforms.uUseBaseWobble.value = 0;
+    } else if (animationType === 'scroll') {
+      onScroll = () => {
+        const currentScrollY = window.scrollY;
+        scrollVelocity = currentScrollY - lastScrollY;
+        lastScrollY = currentScrollY;
+        startRAF();
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      program.uniforms.uUseBaseWobble.value = 1;
     } else if (animationType === '3drotate') {
       program.uniforms.uUseBaseWobble.value = 0;
     } else {
@@ -383,6 +384,31 @@ const Prism: React.FC<PrismProps> = ({
             Math.abs(yaw - targetYaw) < 1e-4 && Math.abs(pitch - targetPitch) < 1e-4 && Math.abs(roll) < 1e-4;
           if (settled) continueRAF = false;
         }
+      } else if (animationType === 'scroll') {
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const scrollFraction = window.scrollY / maxScroll;
+        
+        // Base tilt from position, plus a highly responsive tilt from scroll velocity
+        const basePitch = (scrollFraction - 0.5) * 1.5;
+        const velocityPitch = scrollVelocity * 0.015;
+        targetPitch = basePitch + velocityPitch;
+        targetPitch = Math.max(-1.2, Math.min(1.2, targetPitch));
+        
+        // Yaw spins significantly based on scroll speed
+        targetYaw = scrollVelocity * 0.02;
+        targetYaw = Math.max(-1.5, Math.min(1.5, targetYaw));
+        
+        scrollVelocity *= 0.9;
+        
+        yaw = lerp(yaw, targetYaw, INERT);
+        pitch = lerp(pitch, targetPitch, INERT);
+        roll = lerp(roll, 0, 0.1);
+        program.uniforms.uRot.value = setMat3FromEuler(yaw, pitch, roll, rotBuf);
+        
+        if (NOISE_IS_ZERO) {
+          const settled = Math.abs(yaw - targetYaw) < 1e-4 && Math.abs(pitch - targetPitch) < 1e-4 && Math.abs(scrollVelocity) < 1e-4;
+          if (settled) continueRAF = false;
+        }
       } else if (animationType === '3drotate') {
         const tScaled = time * TS;
         yaw = tScaled * wY;
@@ -391,25 +417,17 @@ const Prism: React.FC<PrismProps> = ({
         program.uniforms.uRot.value = setMat3FromEuler(yaw, pitch, roll, rotBuf);
         if (TS < 1e-6) continueRAF = false;
       } else {
-        // 'rotate' (auto-rotates slowly + accelerates dynamically on scroll)
-        const currentScroll = window.scrollY;
-        const scrollDelta = Math.abs(currentScroll - lastScrollYVal);
-        lastScrollYVal = currentScroll;
-
-        const now = performance.now();
-        const dt = Math.min(0.1, (now - lastT) * 0.001); // cap dt to prevent jump on tab switch
-        lastT = now;
-
-        const autoSpeed = 0.08; // radians per second base
-        const scrollSpeedBoost = 0.45; // scroll boost factor
-        const currentSpeed = autoSpeed + scrollDelta * scrollSpeedBoost * 0.05;
-
-        accumulatedYaw += currentSpeed * dt;
-
-        yaw = accumulatedYaw;
-        pitch = Math.sin(accumulatedYaw * 0.5) * 0.15;
-        roll = Math.cos(accumulatedYaw * 0.3) * 0.1;
-        program.uniforms.uRot.value = setMat3FromEuler(yaw, pitch, roll, rotBuf);
+        rotBuf[0] = 1;
+        rotBuf[1] = 0;
+        rotBuf[2] = 0;
+        rotBuf[3] = 0;
+        rotBuf[4] = 1;
+        rotBuf[5] = 0;
+        rotBuf[6] = 0;
+        rotBuf[7] = 0;
+        rotBuf[8] = 1;
+        program.uniforms.uRot.value = rotBuf;
+        if (TS < 1e-6) continueRAF = false;
       }
 
       renderer.render({ scene: mesh });
@@ -444,6 +462,9 @@ const Prism: React.FC<PrismProps> = ({
         if (onPointerMove) window.removeEventListener('pointermove', onPointerMove as EventListener);
         window.removeEventListener('mouseleave', onLeave);
         window.removeEventListener('blur', onBlur);
+      }
+      if (animationType === 'scroll') {
+        if (onScroll) window.removeEventListener('scroll', onScroll);
       }
       if (suspendWhenOffscreen) {
         const io = (container as PrismContainer).__prismIO as IntersectionObserver | undefined;

@@ -147,10 +147,13 @@ export default function DistrictOverlay({
         }
       `}</style>
 
-      {/* Top Banner Navigation */}
       <header className="w-full flex justify-between items-center pointer-events-auto bg-[#0c0f14]/80 backdrop-blur-md border border-[#F2F3F7]/10 px-6 py-4 rounded-xl shadow-lg z-30">
         <div className="flex items-center gap-3">
-          <div className="w-3 h-3 rounded-full bg-[#5FD4E3] animate-pulse" />
+          <div className="flex flex-col items-end gap-[3.5px] shrink-0">
+            <div className="h-[2px] rounded-full" style={{ width: '5px', background: '#5FD4E3', opacity: 0.5, boxShadow: '0 0 4px #5FD4E3' }} />
+            <div className="h-[2px] rounded-full" style={{ width: '10px', background: '#5FD4E3', opacity: 0.8, boxShadow: '0 0 6px #5FD4E3' }} />
+            <div className="h-[2px] rounded-full" style={{ width: '16px', background: '#5FD4E3', boxShadow: '0 0 8px #5FD4E3' }} />
+          </div>
           <h1 className="text-[17px] font-semibold tracking-tight text-[#F2F3F7] opacity-92">AURA AGENT</h1>
           <span className="text-[11px] font-mono tracking-widest text-[#F2F3F7] opacity-38 uppercase px-2 py-0.5 bg-[#F2F3F7]/5 rounded">
             ValueForge Pipeline

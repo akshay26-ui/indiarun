@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 
 // Inline fallback for GoArrowUpRight so we don't need react-icons
-const GoArrowUpRight: React.FC<{ className?: string; 'aria-hidden'?: string }> = ({ className, 'aria-hidden': ariaHidden }) => (
+const GoArrowUpRight: React.FC<{ className?: string; 'aria-hidden'?: boolean }> = ({ className, 'aria-hidden': ariaHidden }) => (
   <svg
     stroke="currentColor"
     fill="none"
@@ -259,7 +259,7 @@ const CardNav: React.FC<CardNavProps> = ({
                     href={lnk.href}
                     aria-label={lnk.ariaLabel}
                   >
-                    <GoArrowUpRight className="nav-card-link-icon shrink-0" aria-hidden="true" />
+                    <GoArrowUpRight className="nav-card-link-icon shrink-0" aria-hidden />
                     {lnk.label}
                   </a>
                 ))}

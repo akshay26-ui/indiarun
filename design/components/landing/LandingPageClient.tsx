@@ -234,6 +234,17 @@ export default function LandingPageClient() {
           transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
           will-change: transform;
         }
+
+        /* Scroll Line Animation */
+        @keyframes scrollLine {
+          0% { transform: scaleY(0); transform-origin: top; }
+          40% { transform: scaleY(1); transform-origin: top; }
+          60% { transform: scaleY(1); transform-origin: bottom; }
+          100% { transform: scaleY(0); transform-origin: bottom; }
+        }
+        .scroll-line-animated {
+          animation: scrollLine 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        }
       `}</style>
 
       {/* ────────────────────────────────────────────────────────────────────
@@ -242,16 +253,16 @@ export default function LandingPageClient() {
            ──────────────────────────────────────────────────────────────────── */}
       <div className="fixed inset-0" style={{ zIndex: -10, background: T.bg }}>
         <Prism
-          animationType="rotate"
-          timeScale={0}
+          animationType="scroll"
+          timeScale={0.5}
           height={3.5}
-          baseWidth={5.1}
-          scale={2.7}
+          baseWidth={5.5}
+          scale={2.92}
           hueShift={0}
-          colorFrequency={0.6}
-          noise={0.15}
-          glow={1.0}
-          bloom={1.0}
+          colorFrequency={1}
+          noise={0.05}
+          glow={1}
+          offset={{ x: 0, y: 0 }}
         />
         {/* Subtle bottom vignette so text stays readable */}
         <div
@@ -267,13 +278,14 @@ export default function LandingPageClient() {
            ──────────────────────────────────────────────────────────────────── */}
       <CardNav
         logo={
-          <div className="flex items-center gap-2.5 select-none">
+          <div className="flex items-center gap-3.5 select-none">
+            <div className="flex flex-col items-end gap-[4px] shrink-0">
+              <div className="h-[2.5px] rounded-full" style={{ width: '8px', background: T.primary, opacity: 0.5, boxShadow: `0 0 6px ${T.primary}` }} />
+              <div className="h-[2.5px] rounded-full" style={{ width: '15px', background: T.primary, opacity: 0.8, boxShadow: `0 0 8px ${T.primary}` }} />
+              <div className="h-[2.5px] rounded-full" style={{ width: '22px', background: T.primary, boxShadow: `0 0 10px ${T.primary}` }} />
+            </div>
             <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: T.primary, boxShadow: `0 0 10px ${T.primary}ee` }}
-            />
-            <span
-              className="font-bold text-[16px] tracking-tight"
+              className="font-extrabold text-[18px] tracking-tight"
               style={{ fontFamily: T.fontDisplay, color: T.fog92 }}
             >
               Aura Agent
@@ -326,48 +338,26 @@ export default function LandingPageClient() {
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 pb-20">
           {/* The hero has NO opaque background — the prism bleeds through */}
 
-          {/* Eyebrow badge */}
-          <div
-            className="mb-8 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full animate-fade-in"
-            style={{
-              border: `1px solid rgba(79,70,229,0.25)`,
-              background: 'rgba(3, 5, 8, 0.65)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: 'inset 0 0 0 1px rgba(79,70,229,0.12), 0 4px 20px rgba(0,0,0,0.3)',
-            }}
-            data-reveal
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: T.primary }} />
-              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: T.primary }} />
-            </span>
-            <span
-              className="text-[11px] font-semibold tracking-[0.16em] uppercase"
-              style={{ fontFamily: T.fontBody, color: T.indigoMid }}
-            >
-              Autonomous Product PM
-            </span>
-          </div>
+
 
           {/* Headline */}
           <h1
-            className="text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold tracking-[-0.04em] leading-[1.02] mb-6 max-w-4xl"
+            className="text-[clamp(2.3rem,5.2vw,4.25rem)] font-extrabold tracking-[-0.045em] leading-[1.08] mb-6 max-w-3xl"
             style={{ fontFamily: T.fontDisplay, color: T.fog92 }}
             data-reveal
           >
-            Autonomous product engineering <br />
-            <span style={{ color: T.indigoMid }}>powered by AI agents.</span>
+            Product engineering, <br />
+            <span style={{ color: T.indigoMid }}>autonomously.</span>
           </h1>
 
           {/* Sub copy */}
           <p
-            className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mb-10"
-            style={{ fontFamily: T.fontBody, color: T.fog58 }}
+            className="text-[15px] md:text-[17px] leading-[1.65] max-w-xl mb-10 text-white/55"
+            style={{ fontFamily: T.fontBody }}
             data-reveal
           >
-            Define your concept. Aura Agent automatically conducts market research, compiles 
-            specifications, designs interfaces, and generates functional prototypes — while 
-            you direct the workflow.
+            Aura Agent researches your market, designs interfaces, builds roadmaps, 
+            and ships functional prototypes — bringing your ideas to life automatically.
           </p>
 
           {/* CTAs */}
@@ -401,9 +391,31 @@ export default function LandingPageClient() {
           </div>
 
           {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" data-reveal>
-            <span className="text-[11px] tracking-[0.1em] uppercase" style={{ color: T.fog25, fontFamily: T.fontMono }}>scroll</span>
-            <div className="w-px h-8" style={{ background: `linear-gradient(to bottom, ${T.fog25}, transparent)` }} />
+          <div 
+            style={{ 
+              position: 'absolute', 
+              bottom: '2.5rem', 
+              left: '50%', 
+              transform: 'translateX(-50%)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              gap: '10px' 
+            }} 
+            data-reveal
+          >
+            <span className="text-[10px] tracking-[0.15em] uppercase font-medium" style={{ color: T.fog25, fontFamily: T.fontMono }}>
+              scroll
+            </span>
+            <div 
+              className="w-px h-10 overflow-hidden" 
+              style={{ background: 'rgba(255, 255, 255, 0.08)' }}
+            >
+              <div 
+                className="scroll-line-animated w-full h-full" 
+                style={{ background: `linear-gradient(to bottom, ${T.primary}, transparent)` }} 
+              />
+            </div>
           </div>
         </section>
 
@@ -435,12 +447,6 @@ export default function LandingPageClient() {
         <section id="pipeline">
           {/* Section header */}
           <div className="text-center px-6 pt-28 pb-8" data-reveal>
-            <span
-              className="text-[11px] font-medium tracking-[0.18em] uppercase"
-              style={{ fontFamily: T.fontBody, color: T.primary }}
-            >
-              The Pipeline
-            </span>
             <h2
               className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight"
               style={{ fontFamily: T.fontDisplay, color: T.fog92 }}
@@ -565,9 +571,6 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section id="features" className="px-6 pt-12 pb-28 max-w-7xl mx-auto">
           <div className="text-center mb-16" data-reveal>
-            <span className="text-[11px] font-medium tracking-[0.18em] uppercase" style={{ fontFamily: T.fontBody, color: T.primary }}>
-              Capabilities
-            </span>
             <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
               What makes Aura different.
             </h2>
@@ -716,9 +719,6 @@ export default function LandingPageClient() {
         <section id="industry" className="px-6 py-28">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16" data-reveal>
-              <span className="text-[11px] font-medium tracking-[0.18em] uppercase" style={{ fontFamily: T.fontBody, color: T.violetMuted }}>
-                Industries
-              </span>
               <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
                 Built for product teams who ship.
               </h2>
@@ -787,9 +787,6 @@ export default function LandingPageClient() {
         <section className="px-6 py-28">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16" data-reveal>
-              <span className="text-[11px] font-medium tracking-[0.18em] uppercase" style={{ fontFamily: T.fontBody, color: T.primary }}>
-                How It Works
-              </span>
               <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
                 Three moves. Ship faster.
               </h2>
@@ -857,9 +854,6 @@ export default function LandingPageClient() {
              ──────────────────────────────────────────────────────────────── */}
         <section id="pricing" className="px-6 py-28">
           <div className="text-center mb-16" data-reveal>
-            <span className="text-[11px] font-medium tracking-[0.18em] uppercase" style={{ fontFamily: T.fontBody, color: T.primary }}>
-              Pricing
-            </span>
             <h2 className="mt-4 text-[clamp(1.8rem,4vw,3rem)] font-bold tracking-tight" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
               Simple. Transparent. No surprise bills.
             </h2>
@@ -876,7 +870,7 @@ export default function LandingPageClient() {
               },
               {
                 tier: 'Pro',
-                price: '$49',
+                price: 'Rs. 999',
                 sub: 'per month',
                 features: ['Unlimited briefs', 'Full 6-stage pipeline', 'Prototype generation', 'GTM planning', 'Live feedback loop', 'Priority support'],
                 primary: true,
@@ -901,14 +895,16 @@ export default function LandingPageClient() {
                     : 'inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.12), 0 24px 60px rgba(0, 0, 0, 0.65)',
                 }}
               >
-                {plan.primary && (
-                  <span
-                    className="text-[10px] font-semibold tracking-[0.16em] uppercase px-3 py-1 rounded-full self-start mb-4"
-                    style={{ background: `${T.primary}18`, color: T.primary, border: `1px solid ${T.primary}22`, fontFamily: T.fontBody }}
-                  >
-                    Most Popular
-                  </span>
-                )}
+                <div style={{ height: 26, marginBottom: 16, display: 'flex', alignItems: 'center' }}>
+                  {plan.primary ? (
+                    <span
+                      className="text-[10px] font-semibold tracking-[0.16em] uppercase px-3 py-1 rounded-full"
+                      style={{ background: `${T.primary}18`, color: T.primary, border: `1px solid ${T.primary}22`, fontFamily: T.fontBody }}
+                    >
+                      Most Popular
+                    </span>
+                  ) : null}
+                </div>
                 <span className="text-[12px] tracking-[0.14em] uppercase" style={{ fontFamily: T.fontBody, color: T.fog38 }}>
                   {plan.tier}
                 </span>
@@ -987,8 +983,12 @@ export default function LandingPageClient() {
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
               {/* Logo */}
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: T.primary }} />
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end gap-[3px] shrink-0">
+                  <div className="h-[2px] rounded-full" style={{ width: '5px', background: T.primary, opacity: 0.5, boxShadow: `0 0 4px ${T.primary}` }} />
+                  <div className="h-[2px] rounded-full" style={{ width: '10px', background: T.primary, opacity: 0.8, boxShadow: `0 0 6px ${T.primary}` }} />
+                  <div className="h-[2px] rounded-full" style={{ width: '16px', background: T.primary, boxShadow: `0 0 8px ${T.primary}` }} />
+                </div>
                 <span className="font-bold text-[14px]" style={{ fontFamily: T.fontDisplay, color: T.fog92 }}>
                   Aura Agent
                 </span>
