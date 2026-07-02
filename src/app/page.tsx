@@ -1,10 +1,16 @@
+'use client';
+
+import dynamic from 'next/dynamic';
+
+const LandingPageClient = dynamic(
+  () => import('../../design/components/landing/LandingPageClient'),
+  { ssr: false }
+);
+
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-4">UAPA</h1>
-      <p className="text-lg text-muted-foreground">
-        End-to-End Autonomous PM Agent
-      </p>
+    <main className="min-h-screen relative">
+      <LandingPageClient />
     </main>
   );
 }
