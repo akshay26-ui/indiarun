@@ -13,6 +13,16 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     headers.set("Authorization", `Bearer ${token}`);
   }
 
+  // --- MOCK AUTHENTICATION FOR UI PROTOTYPING ---
+  if (endpoint.startsWith("/auth/signup") || endpoint.startsWith("/auth/login")) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ access_token: "mock-jwt-token-123" });
+      }, 800); // 800ms delay to simulate network request
+    });
+  }
+  // ----------------------------------------------
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
