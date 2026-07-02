@@ -19,10 +19,12 @@
 ## 1 — Database (Supabase)
 
 1. Go to [supabase.com](https://supabase.com) → **New Project**
-2. Copy your **Connection String** (Settings → Database → URI)
-   - Async URL: `postgresql+asyncpg://postgres:<pw>@db.<ref>.supabase.co:5432/postgres`
-   - Sync URL (Alembic): `postgresql+psycopg2://postgres:<pw>@db.<ref>.supabase.co:5432/postgres`
-3. Run migrations **once** from your local machine:
+2. Go to **Settings → Database** and scroll down to the **Connection Pooler** section. (Do *not* use the direct connection on port 5432, as Render free tier does not support IPv6).
+3. Copy the Pooler URL (port 6543). It will look like this: `postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres`
+4. Update the protocol for your environment variables:
+   - Async URL (Render): `postgresql+asyncpg://postgres.[ref]...`
+   - Sync URL (Local Alembic): `postgresql+psycopg2://postgres.[ref]...`
+5. Run migrations **once** from your local machine:
    ```bash
    cd backend
    cp .env.example .env          # fill in DATABASE_URL_SYNC + other vars
