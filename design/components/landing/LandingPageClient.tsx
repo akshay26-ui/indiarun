@@ -111,10 +111,13 @@ const handleCardTilt = (e: React.MouseEvent<HTMLDivElement>) => {
   const rect = el.getBoundingClientRect();
   const x = (e.clientX - rect.left) / rect.width - 0.5;
   const y = (e.clientY - rect.top) / rect.height - 0.5;
-  el.style.transform = `perspective(800px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg) translateY(-4px)`;
+  el.style.transition = 'transform 0.1s ease-out';
+  el.style.transform = `perspective(1000px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg) translateY(-4px)`;
 };
 const handleCardTiltLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-  e.currentTarget.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateY(0px)';
+  const el = e.currentTarget;
+  el.style.transition = 'transform 0.5s cubic-bezier(0.22,1,0.36,1)';
+  el.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0px)';
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -231,7 +234,8 @@ export default function LandingPageClient() {
 
         /* Tilt card interaction */
         .tilt-card {
-          transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+          transform-style: preserve-3d;
+          transition: transform 0.15s ease-out;
           will-change: transform;
         }
 

@@ -388,25 +388,18 @@ const Prism: React.FC<PrismProps> = ({
         const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
         const scrollFraction = window.scrollY / maxScroll;
         
-        // Base tilt from position, plus a highly responsive tilt from scroll velocity
-        const basePitch = (scrollFraction - 0.5) * 1.5;
-        const velocityPitch = scrollVelocity * 0.015;
-        targetPitch = basePitch + velocityPitch;
-        targetPitch = Math.max(-1.2, Math.min(1.2, targetPitch));
+        // Smoothly map scroll position to a small tilt (-0.25 to 0.25 radians)
+        targetPitch = (scrollFraction - 0.5) * 0.5;
+        // Add a slight yaw twist based on scroll position
+        targetYaw = Math.sin(scrollFraction * Math.PI * 2) * 0.3;
         
-        // Yaw spins significantly based on scroll speed
-        targetYaw = scrollVelocity * 0.02;
-        targetYaw = Math.max(-1.5, Math.min(1.5, targetYaw));
-        
-        scrollVelocity *= 0.9;
-        
-        yaw = lerp(yaw, targetYaw, INERT);
-        pitch = lerp(pitch, targetPitch, INERT);
+        yaw = lerp(yaw, targetYaw, 0.08);
+        pitch = lerp(pitch, targetPitch, 0.08);
         roll = lerp(roll, 0, 0.1);
         program.uniforms.uRot.value = setMat3FromEuler(yaw, pitch, roll, rotBuf);
         
         if (NOISE_IS_ZERO) {
-          const settled = Math.abs(yaw - targetYaw) < 1e-4 && Math.abs(pitch - targetPitch) < 1e-4 && Math.abs(scrollVelocity) < 1e-4;
+          const settled = Math.abs(yaw - targetYaw) < 1e-4 && Math.abs(pitch - targetPitch) < 1e-4;
           if (settled) continueRAF = false;
         }
       } else if (animationType === '3drotate') {
