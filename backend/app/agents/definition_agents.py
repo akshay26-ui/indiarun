@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.services.llm import client
@@ -60,7 +63,7 @@ def generate_personas(intake_brief_dict: dict, brand_brief_dict: dict) -> list[d
         parsed = json.loads(data)
         return parsed.get("personas", [])
     except Exception as e:
-        print(f"Error generating personas: {e}")
+        logger.warning(f"Error generating personas: {e}")
         return []
 
 def generate_features(intake_brief_dict: dict, personas_list: list) -> list[dict]:
@@ -90,7 +93,7 @@ def generate_features(intake_brief_dict: dict, personas_list: list) -> list[dict
         parsed = json.loads(data)
         return parsed.get("features", [])
     except Exception as e:
-        print(f"Error generating features: {e}")
+        logger.warning(f"Error generating features: {e}")
         return []
 
 def generate_prd(intake_brief_dict: dict, brand_brief_dict: dict, personas_list: list, features_list: list) -> str:
@@ -122,5 +125,5 @@ def generate_prd(intake_brief_dict: dict, brand_brief_dict: dict, personas_list:
         parsed = json.loads(data)
         return parsed.get("content_markdown", "")
     except Exception as e:
-        print(f"Error generating PRD: {e}")
+        logger.warning(f"Error generating PRD: {e}")
         return "# Error generating PRD\nPlease check backend logs."

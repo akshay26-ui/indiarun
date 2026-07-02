@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UAPA — Unified AI Product Accelerator
 
-## Getting Started
+> From raw idea to pitch-ready product in 6 AI-powered stages.
 
-First, run the development server:
+## What it does
+
+UAPA walks founders through a full product development pipeline — no paid research tools, no expensive consultants:
+
+| Stage | What happens |
+|-------|-------------|
+| **1 · Intake** | Conversational AI extracts your idea, constraints, and problem statement |
+| **2 · Whitespace** | DuckDuckGo + Gemini analyse competitors, price tiers, and psychographic gaps with cited sources |
+| **3 · Definition** | Auto-generates target personas, a RICE-prioritised feature table, and a full PRD |
+| **4 · Prototype** | Physical products → Pollinations.ai concept render + spec sheet. Software → scaffolded Next.js code |
+| **5 · GTM + Economics** | Gemini drafts GTM motion, CAC/LTV/payback models, and channel strategy |
+| **6 · Tracking** | Upload weekly metrics CSV → anomaly detection → feedback loop back to Stage 1 |
+
+**Overview page** (`/project/<id>/overview`) — pitch-ready summary of all 6 stages with one-click Markdown export.
+
+## Tech stack (all free tier)
+
+- **Frontend**: Next.js 14, shadcn/ui, Recharts — deployed on **Vercel**
+- **Backend**: FastAPI, SQLAlchemy, Alembic — deployed on **Render**
+- **Database**: PostgreSQL — hosted on **Supabase**
+- **AI**: Gemini 2.5 Flash (Google AI Studio free tier)
+- **Images**: Pollinations.ai (free, no auth)
+- **Search**: DuckDuckGo DDGS (free, no auth)
+- **Trends**: pytrends (Google Trends, free)
+
+## Quick start
 
 ```bash
+# Clone
+git clone https://github.com/shreyanshagrawal/indiarun.git
+cd indiarun
+
+# Backend
+cd backend && cp .env.example .env  # fill in your values
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+
+# Frontend (new terminal)
+cd ..
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api" > .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to get started.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy to production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for step-by-step instructions to deploy on Render + Vercel + Supabase.
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+indiarun/
+├── src/                    # Next.js 14 frontend (App Router)
+│   ├── app/
+│   │   ├── project/[id]/   # All 6 stage pages + overview
+│   │   └── dashboard/      # Project list
+│   ├── components/         # Shared UI components (shadcn + custom)
+│   └── lib/                # API client helpers
+├── backend/
+│   ├── app/
+│   │   ├── agents/         # AI agents (Gemini, DuckDuckGo, pytrends)
+│   │   ├── models/         # SQLAlchemy ORM models (14 tables)
+│   │   ├── routers/        # FastAPI route handlers
+│   │   └── services/       # Auth, LLM client
+│   ├── alembic/            # DB migrations
+│   ├── Dockerfile          # Production container
+│   └── requirements.txt
+├── docs/
+│   ├── DEPLOYMENT.md       # Step-by-step deploy guide
+│   └── UAPA_100_Antigravity_Prompts.md
+└── design/                 # UI/UX design assets
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Required by | Description |
+|----------|------------|-------------|
+| `DATABASE_URL` | Backend | Supabase async connection string |
+| `GEMINI_API_KEY` | Backend | Google AI Studio free key |
+| `JWT_SECRET` | Backend | 32-char random string |
+| `NEXT_PUBLIC_API_URL` | Frontend | Backend API base URL |
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `backend/.env.example` for the full template.

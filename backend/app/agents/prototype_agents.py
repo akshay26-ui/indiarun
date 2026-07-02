@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import urllib.parse
 import httpx
@@ -47,7 +50,7 @@ async def generate_software_code(prd_text: str, features: list) -> str:
             code = "\n".join(code.split("\n")[1:-1])
         return code.strip()
     except Exception as e:
-        print(f"Error generating software code: {e}")
+        logger.warning(f"Error generating software code: {e}")
         return "// Error generating code"
 
 async def deploy_software_prototype(code: str) -> str:
@@ -93,7 +96,7 @@ async def generate_physical_spec(attributes: list) -> dict:
         )
         return json.loads(response.text)
     except Exception as e:
-        print(f"Error generating spec sheet: {e}")
+        logger.warning(f"Error generating spec sheet: {e}")
         return {
             "materials": "Unknown",
             "format_dimensions": "Unknown",

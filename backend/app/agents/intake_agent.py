@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -73,7 +76,7 @@ Output must strictly match the JSON schema.
         result_dict = json.loads(response.text)
         return IntakeBriefSchema(**result_dict)
     except Exception as e:
-        print(f"Error in intake agent: {e}")
+        logger.warning(f"Error in intake agent: {e}")
         return IntakeBriefSchema(
             agent_reply="I encountered an error processing your request. Please try again.",
         )

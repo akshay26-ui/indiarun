@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 from google import genai
 
@@ -12,7 +15,7 @@ try:
     client = genai.Client(api_key=api_key)
 except Exception as e:
     # If the key is missing or invalid, we print a warning. The client might not be usable.
-    print(f"Warning: Failed to initialize Google GenAI client. Ensure GEMINI_API_KEY is set. Error: {e}")
+    logger.warning(f"Warning: Failed to initialize Google GenAI client. Ensure GEMINI_API_KEY is set. Error: {e}")
     client = None
 
 def get_llm_client():

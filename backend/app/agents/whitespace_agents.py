@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import json
 import requests
@@ -85,7 +88,7 @@ def discover_competitors(category: str, known_competitors: List[str]) -> List[di
                 print(f"Error scraping {url}: {e}")
                 
     except Exception as e:
-        print(f"DDGS error: {e}")
+        logger.warning(f"DDGS error: {e}")
         
     if not results:
         return []
@@ -120,7 +123,7 @@ def discover_competitors(category: str, known_competitors: List[str]) -> List[di
             "citations": results_urls
         }
     except Exception as e:
-        print(f"Extraction error: {e}")
+        logger.warning(f"Extraction error: {e}")
         return {"competitors": [], "citations": []}
 
 def analyze_price_tiers(competitors: List[dict]) -> dict:
@@ -195,7 +198,7 @@ def analyze_psychographics(category: str, review_snippets: List[str]) -> dict:
                     mean_val = interest_over_time_df[kw].mean()
                     scores[keywords[i]] += mean_val
     except Exception as e:
-        print(f"Pytrends error (ignoring): {e}")
+        logger.warning(f"Pytrends error (ignoring): {e}")
         
     # 2. Transformers sentiment on review snippets
     if review_snippets:
@@ -280,7 +283,7 @@ def assess_brand_credibility(brand_name: str, positioning: str) -> dict:
             except Exception as e:
                 print(f"Error scraping credibility for {url}: {e}")
     except Exception as e:
-        print(f"DDGS error in credibility: {e}")
+        logger.warning(f"DDGS error in credibility: {e}")
         
     if not results:
         return {"score": None, "citations": []}
@@ -310,7 +313,7 @@ def assess_brand_credibility(brand_name: str, positioning: str) -> dict:
         score = float(score_text)
         return {"score": score, "citations": results_urls}
     except Exception as e:
-        print(f"Credibility scoring error: {e}")
+        logger.warning(f"Credibility scoring error: {e}")
         return {"score": None, "citations": []}
 
 def simulate_failure(idea_summary: str, precedents: List[dict]) -> List[dict]:
@@ -346,7 +349,7 @@ def simulate_failure(idea_summary: str, precedents: List[dict]) -> List[dict]:
         data = json.loads(response.text)
         return data.get("risks", [])
     except Exception as e:
-        print(f"Failure simulation error: {e}")
+        logger.warning(f"Failure simulation error: {e}")
         return []
 
 class RecommendedAttributeSchema(BaseModel):
@@ -392,7 +395,7 @@ def recommend_attributes(whitespace_summary: str, psychographic_target: dict, fa
         data = json.loads(response.text)
         return data.get("attributes", [])
     except Exception as e:
-        print(f"Attribute recommendation error: {e}")
+        logger.warning(f"Attribute recommendation error: {e}")
         return []
 
 import asyncio
