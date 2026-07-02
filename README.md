@@ -1,4 +1,4 @@
-# UAPA — Unified AI Product Accelerator
+# AURA AGENT — Unified AI Product Accelerator
 
 > From raw idea to pitch-ready product in 6 AI-powered stages.
 
