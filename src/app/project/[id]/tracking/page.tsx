@@ -20,6 +20,7 @@ export default function TrackingPage() {
   const [metrics, setMetrics] = useState<any[]>([]);
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [csvErrors, setCsvErrors] = useState<{row: number, errors: string[]}[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -65,12 +66,30 @@ export default function TrackingPage() {
     }
   };
 
+  const downloadSampleCSV = () => {
+    const header = "date,dau,mau,retention_rate,nps_score,csat_score,churn_rate,revenue,funnel_conversion_rate";
+    const rows = [
+      "2026-07-01,1500,12000,82.5,45,78,2.1,9500.00,23.4",
+      "2026-07-08,1450,12100,74.0,42,76,4.5,9200.00,18.1",
+      "2026-07-15,1380,12200,72.5,40,74,4.8,8900.00,17.5",
+    ];
+    const csvContent = [header, ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sample_tracking_metrics.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleUpload = async (file: File) => {
     if (!file.name.endsWith(".csv")) {
       alert("Please upload a CSV file.");
       return;
     }
 
+    setCsvErrors([]);
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -92,12 +111,10 @@ export default function TrackingPage() {
       }
 
       if (data.status === "error") {
-        console.error("CSV Errors:", data.errors);
-        alert(`Failed to parse CSV. Found ${data.errors.length} row errors. Check console for details.`);
+        setCsvErrors(data.errors || []);
       } else {
         if (data.errors && data.errors.length > 0) {
-          console.warn("Partial Success, Errors:", data.errors);
-          alert(`Inserted ${data.inserted_count} rows, but found ${data.errors.length} errors.`);
+          setCsvErrors(data.errors);
         }
         await fetchDashboard();
       }
@@ -167,7 +184,10 @@ export default function TrackingPage() {
             >
               <UploadCloud className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Drag & Drop your CSV here</h3>
-              <p className="text-sm text-muted-foreground mb-6">Required columns: date, dau, mau, retention_rate, nps_score, csat_score, churn_rate, revenue, funnel_conversion_rate</p>
+              <p className="text-sm text-muted-foreground mb-1">Required columns:</p>
+              <code className="text-xs bg-muted px-2 py-1 rounded block mb-6 break-all">
+                date, dau, mau, retention_rate, nps_score, csat_score, churn_rate, revenue, funnel_conversion_rate
+              </code>
               
               <input
                 ref={fileInputRef}
@@ -176,12 +196,38 @@ export default function TrackingPage() {
                 className="hidden"
                 onChange={handleFileChange}
               />
-              <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-                Browse Files
-              </Button>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                  Browse Files
+                </Button>
+                <Button variant="outline" onClick={downloadSampleCSV}>
+                  <ArrowRight className="mr-2 h-4 w-4 rotate-90" />
+                  Download Sample CSV
+                </Button>
+              </div>
             </div>
-          </CardContent>
+
+            {/* Per-row error panel */}
+            {csvErrors.length > 0 && (
+              <div className="mt-6 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-400">
+                    {csvErrors.length} row{csvErrors.length > 1 ? 's' : ''} failed validation
+                  </p>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {csvErrors.map((err, i) => (
+                    <div key={i} className="text-xs text-red-700 dark:text-red-300">
+                      <span className="font-bold">Row {err.row}:</span>{' '}
+                      {err.errors.join(' | ')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+        </CardContent>
         </Card>
       </div>
     );

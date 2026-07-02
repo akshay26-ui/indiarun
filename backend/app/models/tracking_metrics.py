@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, ForeignKey, Date, Integer
+from sqlalchemy import Column, String, Numeric, ForeignKey, Date, Integer, Index
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
@@ -6,6 +6,10 @@ from app.models.base import Base
 
 class TrackingMetric(Base):
     __tablename__ = "tracking_metrics"
+    __table_args__ = (
+        # Composite index for fast chart queries: filter by project, order by date
+        Index("ix_tracking_metrics_project_date", "project_id", "date"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
