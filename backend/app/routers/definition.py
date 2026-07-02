@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import uuid
 import markdown
-from weasyprint import HTML
 from typing import List, Dict, Any
 
 from app.db.session import get_db
@@ -369,7 +368,11 @@ async def get_prd_pdf(project_id: uuid.UUID, db: AsyncSession = Depends(get_db))
     </html>
     """
     
-    pdf_bytes = HTML(string=html_content).write_pdf()
+    try:
+        from weasyprint import HTML
+        pdf_bytes = HTML(string=html_content).write_pdf()
+    except ImportError:
+        raise HTTPException(status_code=501, detail="PDF generation not available on this server (weasyprint not installed). Use the markdown export instead.")
     
     return Response(
         content=pdf_bytes, 

@@ -18,7 +18,7 @@ from app.models.brand_brief import BrandBrief
 from app.models.prd import PRD
 from app.agents.gtm_agents import generate_unit_economics_verdict, generate_gtm_plan_data
 
-from weasyprint import HTML
+
 from jinja2 import Template
 
 router = APIRouter(prefix="/api/project/{project_id}/gtm", tags=["gtm"])
@@ -334,7 +334,12 @@ async def get_launch_pack_pdf(project_id: str, db: AsyncSession = Depends(get_db
     template = Template(html_template)
     html_content = template.render(project_name=project.idea_name, plan=plan, ue=ue)
     
-    pdf_file = HTML(string=html_content).write_pdf()
+    try:
+        from weasyprint import HTML
+        pdf_file = HTML(string=html_content).write_pdf()
+    except ImportError:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=501, detail="PDF generation not available on this server (weasyprint not installed).")
     
     return Response(
         content=pdf_file,
