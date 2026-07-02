@@ -10,6 +10,8 @@ from app.models.failure_risk import FailureRisk
 from app.models.source_citation import SourceCitation
 from app.models.prototype import Prototype
 
-__all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD", "FailureRisk", "SourceCitation", "Prototype"]
+__all__ = ["Base", "User", "Project", "IntakeBrief", "BrandBrief", "Persona", "Feature", "PRD", "FailureRisk", "SourceCitation", "Prototype", "TrackingMetric", "FeedbackLoopEvent"]
 from .unit_economics import UnitEconomics
 from .gtm_plan import GtmPlan
+from .tracking_metrics import TrackingMetric
+from .feedback_loop_event import FeedbackLoopEvent

@@ -67,7 +67,7 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((p) => (
-            <Card key={p.id} className="hover:border-primary transition-colors cursor-pointer" onClick={() => router.push(`/project/${p.id}/whitespace`)}>
+            <Card key={p.id} className="hover:border-primary transition-colors cursor-pointer" onClick={() => router.push(`/project/${p.id}/${p.current_stage || "intake"}`)}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xl">{p.idea_name}</CardTitle>
                 {p.product_type === "software" ? <Smartphone className="w-5 h-5 text-muted-foreground" /> : <Package className="w-5 h-5 text-muted-foreground" />}

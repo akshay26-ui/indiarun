@@ -64,16 +64,58 @@ export default function GTMPage() {
 
   const fetchData = async () => {
     try {
-      const ueData = await fetchWithAuth(`/project/${projectId}/gtm/unit-economics`);
+      let ueData = await fetchWithAuth(`/project/${projectId}/gtm/unit-economics`);
+      if (!ueData || !ueData.id) {
+        // Auto-generate UE with defaults
+        const token = localStorage.getItem("token") || "";
+        setSavingUE(true);
+        try {
+          // Fire and forget the UE save so it populates something
+          await fetch(`${API_BASE_URL}/project/${projectId}/gtm/unit-economics`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ cac: 50, arpu: 150, service_delivery_cost: 20, customer_lifetime_months: 24 })
+          });
+          // re-fetch
+          ueData = await fetchWithAuth(`/project/${projectId}/gtm/unit-economics`);
+        } catch (e) {
+          console.error("Auto UE save failed", e);
+        } finally {
+          setSavingUE(false);
+        }
+      }
+
       if (ueData && ueData.id) {
         setCac(ueData.cac);
         setArpu(ueData.arpu);
         setServiceDeliveryCost(ueData.service_delivery_cost);
         setCustomerLifetimeMonths(ueData.customer_lifetime_months);
         setVerdict(ueData.verdict);
+      } else {
+        // Fallback to UI defaults if auto-save completely failed
+        setCac(50);
+        setArpu(150);
+        setServiceDeliveryCost(20);
+        setCustomerLifetimeMonths(24);
       }
       
-      const planData = await fetchWithAuth(`/project/${projectId}/gtm/plan`);
+      let planData = await fetchWithAuth(`/project/${projectId}/gtm/plan`);
+      if (!planData || !planData.id) {
+         setGeneratingPlan(true);
+         const token = localStorage.getItem("token") || "";
+         try {
+           await fetch(`${API_BASE_URL}/project/${projectId}/gtm/plan/generate`, {
+             method: "POST",
+             headers: { "Authorization": `Bearer ${token}` }
+           });
+           planData = await fetchWithAuth(`/project/${projectId}/gtm/plan`);
+         } catch (e) {
+           console.error("Auto plan gen failed", e);
+         } finally {
+           setGeneratingPlan(false);
+         }
+      }
+
       if (planData && planData.id) {
         setPlan({
           objective: planData.objective || "",
@@ -85,7 +127,7 @@ export default function GTMPage() {
           success_metrics: planData.success_metrics ? planData.success_metrics.join(", ") : ""
         });
       }
-    } catch {
+    } catch (e) {
       console.error("Failed to load GTM data:", e);
     } finally {
       setLoading(false);
@@ -142,7 +184,7 @@ export default function GTMPage() {
           }
         }
       }
-    } catch {
+    } catch (e) {
       console.error(e);
       alert("Failed to analyze viability.");
       setUeReasoning(null);
@@ -201,7 +243,7 @@ export default function GTMPage() {
           }
         }
       }
-    } catch {
+    } catch (e) {
       console.error(e);
       setPlanReasoning(null);
     } finally {
@@ -230,7 +272,7 @@ export default function GTMPage() {
       });
       if (!res.ok) throw new Error("Failed");
       alert("GTM Plan saved.");
-    } catch {
+    } catch (e) {
       alert("Failed to save plan.");
     } finally {
       setSavingPlan(false);

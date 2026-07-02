@@ -28,12 +28,23 @@ export default function DefinitionPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching definition for project:", projectId);
         const json = await fetchWithAuth(`/project/${projectId}/definition`);
-        console.log("Received definition data:", json);
-        console.log("Personas array:", json?.personas);
-        console.log("Features array:", json?.features);
-        setData(json);
+        
+        if (json && (!json.personas || json.personas.length === 0)) {
+          setGenerating(true);
+          try {
+            await fetchWithAuth(`/project/${projectId}/definition/generate`, { method: "POST" });
+            const generatedJson = await fetchWithAuth(`/project/${projectId}/definition`);
+            setData(generatedJson);
+          } catch (genErr) {
+            console.error("Auto-generation failed", genErr);
+            setData(json);
+          } finally {
+            setGenerating(false);
+          }
+        } else {
+          setData(json);
+        }
       } catch (err) {
         console.error("Error fetching definition:", err);
       } finally {
